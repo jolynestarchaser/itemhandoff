@@ -91,19 +91,19 @@ export default function HandoffPage() {
         </Link>
       </div>
 
-      {showScanner ? (
-        <div className="space-y-4">
-          <QrScanner onScanSuccess={handleScanSuccess} />
-          <div className="text-center mt-4">
-            <button 
-              onClick={() => setShowScanner(false)}
-              className="text-sm text-[#F58220] underline"
-            >
-              หรือกรอกข้อมูลเองโดยไม่สแกน
-            </button>
-          </div>
+      <div className={showScanner ? 'block space-y-4' : 'hidden'}>
+        <QrScanner active={showScanner} onScanSuccess={handleScanSuccess} />
+        <div className="text-center mt-4">
+          <button 
+            onClick={() => setShowScanner(false)}
+            className="text-sm text-[#F58220] underline"
+          >
+            หรือกรอกข้อมูลเองโดยไม่สแกน
+          </button>
         </div>
-      ) : (
+      </div>
+
+      <div className={!showScanner ? 'block' : 'hidden'}>
         <div className="glass-panel p-6 space-y-6 bg-white/5 border border-white/10 rounded-2xl backdrop-blur-md">
           <h2 className="text-xl font-bold text-white text-center">บันทึกการส่งมอบสินค้า</h2>
 
@@ -195,7 +195,7 @@ export default function HandoffPage() {
             </div>
           </form>
         </div>
-      )}
+      </div>
     </div>
   );
 }

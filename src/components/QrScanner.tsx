@@ -4,10 +4,11 @@ import { useEffect, useRef, useState } from 'react';
 import { Html5Qrcode } from 'html5-qrcode';
 
 interface QrScannerProps {
+  active: boolean;
   onScanSuccess: (qrData: string, productName: string, productId: string) => void;
 }
 
-export default function QrScanner({ onScanSuccess }: QrScannerProps) {
+export default function QrScanner({ active, onScanSuccess }: QrScannerProps) {
   const [isScanning, setIsScanning] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const scannerRef = useRef<Html5Qrcode | null>(null);
@@ -28,17 +29,8 @@ export default function QrScanner({ onScanSuccess }: QrScannerProps) {
           const productId = parts.length >= 2 ? parts.pop() || '' : '';
           const productName = parts.join(' ');
 
-          // หยุดสแกนและปิดกล้องสำเร็จแล้วส่งค่ากลับ
-          if (html5QrCode.isScanning) {
-            html5QrCode.stop().then(() => {
-              setIsScanning(false);
-              onScanSuccess(decodedText, productName, productId);
-            }).catch(err => {
-              console.warn('Stop warning:', err);
-              setIsScanning(false);
-              onScanSuccess(decodedText, productName, productId);
-            });
-          }
+          // ส่งค่ากลับไปที่ Parent โดยตรง (การปิดกล้องจะทำโดยอัตโนมัติผ่าน prop active ที่เปลี่ยนไป)
+          onScanSuccess(decodedText, productName, productId);
         },
         () => {
           // ข้ามเฟรมเมื่อไม่เจอ QR Code
@@ -55,25 +47,35 @@ export default function QrScanner({ onScanSuccess }: QrScannerProps) {
   };
 
   const stopScanner = async () => {
-    if (scannerRef.current && scannerRef.current.isScanning) {
-      try {
-        await scannerRef.current.stop();
-      } catch (err) {
-        console.warn('Failed to stop scanner:', err);
+    if (scannerRef.current) {
+      if (scannerRef.current.isScanning) {
+        try {
+          await scannerRef.current.stop();
+        } catch (err) {
+          console.warn('Failed to stop scanner:', err);
+        }
       }
+      scannerRef.current = null;
     }
     setIsScanning(false);
   };
 
-  // เปิดกล้องทันทีที่ component โหลดเสร็จ (ไม่ต้องกดปุ่มเริ่ม)
+  // ควบคุมการเปิด/ปิดกล้องตามสถานะ active ของ Component
   useEffect(() => {
-    startScanner();
+    if (active) {
+      startScanner();
+    } else {
+      stopScanner();
+    }
     return () => {
-      if (scannerRef.current && scannerRef.current.isScanning) {
-        scannerRef.current.stop().catch(err => console.warn('Unmount stop:', err));
+      if (scannerRef.current) {
+        if (scannerRef.current.isScanning) {
+          scannerRef.current.stop().catch(err => console.warn('Cleanup stop:', err));
+        }
+        scannerRef.current = null;
       }
     };
-  }, []);
+  }, [active]);
 
   return (
     <div className="flex flex-col items-center gap-4 p-6 border border-white/10 rounded-2xl bg-white/5 backdrop-blur-md max-w-md mx-auto w-full">
