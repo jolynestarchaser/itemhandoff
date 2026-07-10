@@ -1,0 +1,19 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model HandoffRecord {
+  id           String   @id @default(cuid())
+  qrData       String   // e.g., "Apix Round A001"
+  productName  String   // Parsed from QR (e.g., "Apix Round")
+  productId    String   // Parsed from QR (e.g., "A001")
+  department   String
+  createdAt    DateTime @default(now())
+}
