@@ -1,6 +1,7 @@
 import { getAllRecords } from '@/lib/actions';
 import ExportButton from '@/components/ExportButton';
 import Link from 'next/link';
+import { HandoffRecord } from '@prisma/client';
 
 // บังคับให้โหลดข้อมูลใหม่เสมอ (ไม่ cache) เพื่อให้แสดงรายการใหม่ล่าสุด
 export const dynamic = 'force-dynamic';
@@ -19,7 +20,7 @@ export default async function SummaryPage() {
         {/* ปุ่ม Export ไปยัง Excel พร้อมส่งข้อมูลทั้งหมดเข้าไป */}
         <ExportButton records={records} />
       </div>
-
+      
       {/* ตารางแสดงข้อมูล */}
       <div className="overflow-x-auto">
         <table className="w-full text-left text-sm text-[#A0A0A0]">
@@ -34,7 +35,7 @@ export default async function SummaryPage() {
           </thead>
           <tbody>
             {records.length > 0 ? (
-              records.map((record) => (
+              records.map((record: HandoffRecord) => (
                 <tr key={record.id} className="border-b border-[#333333] hover:bg-[rgba(255,255,255,0.02)] transition-colors">
                   <td className="px-4 py-3 whitespace-nowrap">
                     {new Date(record.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}

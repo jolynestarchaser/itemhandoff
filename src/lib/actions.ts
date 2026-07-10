@@ -2,6 +2,7 @@
 
 import prisma from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
+import { HandoffRecord } from '@prisma/client';
 
 export async function createHandoffRecord(data: { qrData: string; productName: string; productId: string; department: string }) {
   try {
@@ -21,7 +22,7 @@ export async function createHandoffRecord(data: { qrData: string; productName: s
   }
 }
 
-export async function getAllRecords() {
+export async function getAllRecords(): Promise<HandoffRecord[]> {
   try {
     const records = await prisma.handoffRecord.findMany({
       orderBy: {
@@ -35,7 +36,7 @@ export async function getAllRecords() {
   }
 }
 
-export async function getRecordById(id: string) {
+export async function getRecordById(id: string): Promise<HandoffRecord | null> {
   try {
     const record = await prisma.handoffRecord.findUnique({
       where: { id },
@@ -47,7 +48,7 @@ export async function getRecordById(id: string) {
   }
 }
 
-export async function checkProductExists(productId: string) {
+export async function checkProductExists(productId: string): Promise<HandoffRecord | null> {
   try {
     const record = await prisma.handoffRecord.findFirst({
       where: { productId },
