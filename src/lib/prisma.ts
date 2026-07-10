@@ -4,7 +4,8 @@ import { PrismaClient } from '@prisma/client';
 
 // ฟังก์ชันสร้างอินสแตนซ์ของ Prisma Client พร้อม Driver Adapter
 const prismaClientSingleton = () => {
-  const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+  const url = process.env.POSTGRES_URL || process.env.PRISMA_DATABASE_URL;
+  const pool = new Pool({ connectionString: url });
   const adapter = new PrismaPg(pool);
   return new PrismaClient({ adapter });
 };

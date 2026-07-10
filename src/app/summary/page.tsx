@@ -22,8 +22,8 @@ export default async function SummaryPage() {
 
       {/* ตารางแสดงข้อมูล */}
       <div className="overflow-x-auto">
-        <table className="w-full text-left text-sm text-slate-300">
-          <thead className="text-xs text-slate-400 uppercase bg-slate-800/50">
+        <table className="w-full text-left text-sm text-[#A0A0A0]">
+          <thead className="text-xs uppercase bg-[#121212] border-b border-[#333333]">
             <tr>
               <th className="px-4 py-3 rounded-tl-lg">Date</th>
               <th className="px-4 py-3">Product Name</th>
@@ -35,19 +35,19 @@ export default async function SummaryPage() {
           <tbody>
             {records.length > 0 ? (
               records.map((record) => (
-                <tr key={record.id} className="border-b border-slate-700/50 hover:bg-slate-800/30 transition-colors">
+                <tr key={record.id} className="border-b border-[#333333] hover:bg-[rgba(255,255,255,0.02)] transition-colors">
                   <td className="px-4 py-3 whitespace-nowrap">
                     {new Date(record.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                   </td>
-                  <td className="px-4 py-3 font-medium text-white">{record.productName}</td>
+                  <td className="px-4 py-3 font-medium text-[#FFFFFF]">{record.productName}</td>
                   <td className="px-4 py-3 font-mono">{record.productId}</td>
                   <td className="px-4 py-3">
-                    <span className="bg-primary/20 text-[#a78bfa] px-2 py-1 rounded text-xs font-semibold">
+                    <span className="bg-[rgba(45,212,191,0.1)] text-[#2DD4BF] border border-[rgba(45,212,191,0.2)] px-2 py-1 rounded text-xs font-semibold">
                       {record.department}
                     </span>
                   </td>
                   <td className="px-4 py-3">
-                    <Link href={`/print/${record.id}`} className="text-primary hover:text-white underline">
+                    <Link href={`/print/${record.id}`} className="text-[#F58220] hover:text-[#FFFFFF] underline transition-colors">
                       Print
                     </Link>
                   </td>
@@ -55,7 +55,7 @@ export default async function SummaryPage() {
               ))
             ) : (
               <tr>
-                <td colSpan={5} className="px-4 py-8 text-center text-slate-500 italic">
+                <td colSpan={5} className="px-4 py-8 text-center text-[#666666] italic">
                   No records found.
                 </td>
               </tr>

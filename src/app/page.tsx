@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import QrScanner from '@/components/QrScanner';
 import HandoffForm from '@/components/HandoffForm';
+import Link from 'next/dist/client/link';
 
 interface ScannedData {
   qrData: string;
@@ -25,24 +26,13 @@ export default function Home() {
   };
 
   return (
-    <div className="flex flex-col gap-6 w-full max-w-lg mx-auto">
-      <div className="text-center mb-4">
-        <h1 className="text-3xl font-bold text-white mb-2">Inventory System</h1>
-        <p className="text-slate-400">Scan product QR codes to record department handoffs.</p>
-      </div>
-
-      {/* ถ้ายังไม่ได้สแกน (scannedData เป็น null) จะแสดง QrScanner */}
-      {!scannedData ? (
-        <QrScanner onScanSuccess={handleScanSuccess} />
-      ) : (
-        // ถ้าสแกนแล้ว จะแสดง HandoffForm และส่งข้อมูลที่สแกนได้ไปให้
-        <HandoffForm 
-          qrData={scannedData.qrData}
-          productName={scannedData.productName}
-          productId={scannedData.productId}
-          onCancel={handleCancel}
-        />
-      )}
+    <div className='grid grid-cols-2  gap-2'>
+      <Link href="/handoff" className="border border-r rounded-3xl border-white p-10 text-center bg-[#F58220]">
+        ส่งมอบสินค้า
+      </Link>
+      <button className='border border-r rounded-3xl border-white p-10 bg-[#F58220]'>Recent</button>
+      <button className='border border-r rounded-3xl border-white p-10 bg-[#F58220]'>Summary</button>
+      <button className='border border-r rounded-3xl border-white p-10 bg-[#F58220]'>Excel</button>
     </div>
   );
 }

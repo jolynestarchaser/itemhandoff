@@ -1,19 +1,26 @@
 @import "tailwindcss";
 
 @theme {
-  --color-background: #0f172a; /* slate-900 */
-  --color-foreground: #f8fafc; /* slate-50 */
-  --color-primary: #8b5cf6; /* violet-500 */
-  --color-primary-dark: #6d28d9; /* violet-700 */
-  --color-glass: rgba(30, 41, 59, 0.7); /* slate-800 with opacity */
-  --color-glass-border: rgba(255, 255, 255, 0.1);
+  --color-background: #121212;
+  --color-foreground: #FFFFFF;
+  --color-surface: #1E1E1E;
+  --color-border: #333333;
+  --color-primary: #F58220;
+  --color-primary-dark: #e06d12;
+  --color-secondary-teal: #2DD4BF;
+  --color-secondary-blue: #3B82F6;
+  --color-text-high: #FFFFFF;
+  --color-text-medium: #A0A0A0;
+  --color-text-disabled: #666666;
+  --color-glass: rgba(30, 30, 30, 0.7);
+  --color-glass-border: #333333;
 }
 
 @layer base {
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
-    background-image: radial-gradient(circle at top right, #1e1b4b, #0f172a);
+    background-image: radial-gradient(circle at top right, #1a1a1a, #121212);
     background-attachment: fixed;
     min-height: 100vh;
     font-family: system-ui, -apple-system, sans-serif;
@@ -26,27 +33,55 @@
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
     border: 1px solid var(--color-glass-border);
-    border-radius: 1rem;
+    border-radius: 12px;
   }
   
   .btn-primary {
     background-color: var(--color-primary);
-    color: white;
+    color: var(--color-text-high);
     font-weight: 600;
     padding: 0.75rem 1.5rem;
-    border-radius: 0.75rem;
+    border-radius: 8px;
     transition: all 0.2s ease;
   }
-  
-  .btn-primary:hover {
+  .btn-primary:hover:not(:disabled) {
     background-color: var(--color-primary-dark);
     transform: translateY(-2px);
   }
-  
   .btn-primary:disabled {
     opacity: 0.5;
     cursor: not-allowed;
     transform: none;
+  }
+
+  .btn-secondary {
+    background-color: transparent;
+    color: var(--color-secondary-teal);
+    border: 1px solid var(--color-secondary-teal);
+    font-weight: 600;
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+  }
+  .btn-secondary:hover:not(:disabled) {
+    background-color: rgba(45, 212, 191, 0.1);
+  }
+  .btn-secondary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .btn-ghost {
+    background-color: transparent;
+    color: var(--color-text-medium);
+    font-weight: 600;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+  }
+  .btn-ghost:hover {
+    color: var(--color-text-high);
+    background-color: rgba(255, 255, 255, 0.05);
   }
 }
 

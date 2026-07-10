@@ -46,3 +46,16 @@ export async function getRecordById(id: string) {
     return null;
   }
 }
+
+export async function checkProductExists(productId: string) {
+  try {
+    const record = await prisma.handoffRecord.findFirst({
+      where: { productId },
+      orderBy: { createdAt: 'desc' },
+    });
+    return record;
+  } catch (error) {
+    console.error('Failed to check product:', error);
+    return null;
+  }
+}

@@ -54,33 +54,33 @@ export default function HandoffForm({ qrData, productName, productId, onCancel }
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* ช่องแสดงชื่อสินค้า (อ่านได้อย่างเดียว) */}
         <div>
-          <label className="block text-sm font-medium text-slate-300 mb-1">Product Name</label>
+          <label className="block text-sm font-medium text-[#A0A0A0] mb-1">Product Name</label>
           <input 
             type="text" 
             readOnly 
             value={productName} 
-            className="w-full bg-slate-800/50 border border-slate-700 rounded-lg px-4 py-2 text-white opacity-80"
+            className="w-full bg-[#121212] border border-[#333333] rounded-[8px] px-4 py-2 text-[#FFFFFF] opacity-80 outline-none"
           />
         </div>
 
         {/* ช่องแสดงรหัสสินค้า (อ่านได้อย่างเดียว) */}
         <div>
-          <label className="block text-sm font-medium text-slate-300 mb-1">Product ID</label>
+          <label className="block text-sm font-medium text-[#A0A0A0] mb-1">Product ID</label>
           <input 
             type="text" 
             readOnly 
             value={productId} 
-            className="w-full bg-slate-800/50 border border-slate-700 rounded-lg px-4 py-2 text-white opacity-80"
+            className="w-full bg-[#121212] border border-[#333333] rounded-[8px] px-4 py-2 text-[#FFFFFF] opacity-80 outline-none"
           />
         </div>
 
         {/* ตัวเลือกแผนก */}
         <div>
-          <label className="block text-sm font-medium text-slate-300 mb-1">Receiving Department</label>
+          <label className="block text-sm font-medium text-[#A0A0A0] mb-1">Receiving Department</label>
           <select 
             value={department}
             onChange={(e) => setDepartment(e.target.value)}
-            className="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
+            className="w-full bg-[#121212] border border-[#333333] rounded-[8px] px-4 py-2 text-[#FFFFFF] focus:ring-2 focus:ring-[#F58220] focus:border-transparent outline-none transition-all"
             required
           >
             <option value="" disabled>Select Department</option>
@@ -99,7 +99,7 @@ export default function HandoffForm({ qrData, productName, productId, onCancel }
             type="button" 
             onClick={onCancel}
             disabled={isSubmitting}
-            className="flex-1 px-4 py-2 rounded-lg border border-slate-600 text-white hover:bg-slate-800 transition-colors disabled:opacity-50"
+            className="flex-1 btn-secondary"
           >
             Cancel
           </button>
@@ -107,7 +107,7 @@ export default function HandoffForm({ qrData, productName, productId, onCancel }
           <button 
             type="submit" 
             disabled={isSubmitting || !department}
-            className="flex-1 btn-primary disabled:opacity-50"
+            className="flex-1 btn-primary"
           >
             {isSubmitting ? 'Saving...' : 'Submit'}
           </button>
