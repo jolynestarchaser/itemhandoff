@@ -85,11 +85,18 @@
   }
 }
 
-/* Print Styles */
+/* ===== Print Styles ===== */
+
+/* ซ่อน print-only ตอนปกติ */
+.print-only {
+  display: none;
+}
+
 @media print {
+  /* ขนาดกระดาษ A4 คงที่ ไม่เพี้ยนตาม printer */
   @page {
-    size: A4;
-    margin: 10mm;
+    size: 210mm 297mm;
+    margin: 0;
   }
 
   body {
@@ -99,13 +106,39 @@
     padding: 0;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
+    font-size: 10pt;
   }
 
+  /* ซ่อนส่วนที่ไม่ต้องพิมพ์ */
   .no-print {
     display: none !important;
   }
 
-  /* Make sure print pages take exact height needed for 2 copies */
+  /* แสดง print-only */
+  .print-only {
+    display: block !important;
+  }
+
+  /* หน้า A4 แต่ละหน้า — ใช้สำหรับใบส่งมอบที่ต้อง fix ขนาด */
+  .print-page {
+    width: 210mm;
+    height: 297mm;
+    page-break-after: always;
+    box-sizing: border-box;
+    overflow: hidden;
+  }
+
+  .print-page:last-child {
+    page-break-after: auto;
+  }
+
+  /* หน้าที่ตัดหน้าอัตโนมัติ (สำหรับ summary) */
+  .print-auto-page {
+    width: 210mm;
+    box-sizing: border-box;
+  }
+
+  /* Make sure print pages take exact height needed for 2 copies (legacy) */
   .print-container {
     height: 100%;
     width: 100%;

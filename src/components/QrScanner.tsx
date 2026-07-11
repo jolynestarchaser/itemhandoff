@@ -10,48 +10,36 @@ interface QrScannerProps {
 export default function QrScanner({ active, onScanSuccess }: QrScannerProps) {
   const [status, setStatus] = useState<'idle' | 'starting' | 'scanning' | 'error'>('idle');
   const [errorMsg, setErrorMsg] = useState('');
-  const containerRef = useRef<HTMLDivElement>(null);
-  const scannerRef = useRef<any>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const readerRef = useRef<any>(null);
+  const controlsRef = useRef<any>(null);
   const hasScannedRef = useRef(false);
 
   const stopScanner = useCallback(async () => {
-    const scanner = scannerRef.current;
-    if (!scanner) return;
-
-    try {
-      const state = scanner.getState();
-      // State 2 = SCANNING, State 3 = PAUSED
-      if (state === 2 || state === 3) {
-        await scanner.stop();
+    // หยุด controls (zxing decoding loop)
+    if (controlsRef.current) {
+      try {
+        controlsRef.current.stop();
+      } catch {
+        // ignore
       }
-    } catch (err) {
-      // ไม่สน error ตอน stop เพราะอาจจะหยุดไปแล้ว
+      controlsRef.current = null;
     }
 
-    try {
-      scanner.clear();
-    } catch (err) {
-      // clear อาจ fail ถ้า DOM ถูก clean ไปแล้ว - ไม่เป็นไร
+    // หยุด media stream ของกล้อง
+    if (videoRef.current?.srcObject) {
+      const stream = videoRef.current.srcObject as MediaStream;
+      stream.getTracks().forEach(track => track.stop());
+      videoRef.current.srcObject = null;
     }
 
-    scannerRef.current = null;
+    setStatus('idle');
   }, []);
 
   const startScanner = useCallback(async () => {
-    // ต้องมี container DOM element ก่อน
-    if (!containerRef.current) return;
+    if (!videoRef.current) return;
 
-    // ถ้ามี scanner เก่าอยู่ ให้หยุดก่อน
     await stopScanner();
-
-    // สร้าง div ลูกสำหรับให้ library ใช้งาน (แยกออกจาก React DOM)
-    // ทุกครั้งที่สร้างใหม่จะล้างข้อมูลเก่าออกก่อน
-    const wrapper = containerRef.current;
-    wrapper.innerHTML = '';
-    const scannerDiv = document.createElement('div');
-    scannerDiv.id = 'qr-reader-' + Date.now(); // ใช้ id ไม่ซ้ำกันทุกครั้ง
-    scannerDiv.style.width = '100%';
-    wrapper.appendChild(scannerDiv);
 
     setStatus('starting');
     setErrorMsg('');
@@ -59,31 +47,33 @@ export default function QrScanner({ active, onScanSuccess }: QrScannerProps) {
 
     try {
       // Dynamic import เพื่อหลีกเลี่ยงปัญหา SSR
-      const { Html5Qrcode } = await import('html5-qrcode');
-      const html5QrCode = new Html5Qrcode(scannerDiv.id);
-      scannerRef.current = html5QrCode;
+      const { BrowserMultiFormatReader } = await import('@zxing/browser');
 
-      await html5QrCode.start(
-        { facingMode: 'environment' },
-        { fps: 10, qrbox: { width: 250, height: 250 } },
-        (decodedText) => {
-          // ป้องกันการ scan ซ้ำหลายครั้ง (กล้องอาจอ่านได้หลาย frame)
-          if (hasScannedRef.current) return;
-          hasScannedRef.current = true;
+      const reader = new BrowserMultiFormatReader();
+      readerRef.current = reader;
 
-          console.log('Scanned:', decodedText);
+      // เริ่ม decode จากกล้องหลัง (environment)
+      const controls = await reader.decodeFromVideoDevice(
+        undefined, // ใช้กล้อง default (จะเลือก environment ถ้ามี)
+        videoRef.current,
+        (result, error) => {
+          if (result && !hasScannedRef.current) {
+            hasScannedRef.current = true;
 
-          const parts = decodedText.split(' ');
-          const productId = parts.length >= 2 ? parts.pop() || '' : '';
-          const productName = parts.join(' ');
+            const decodedText = result.getText();
+            console.log('Scanned:', decodedText);
 
-          onScanSuccess(decodedText, productName, productId);
-        },
-        () => {
-          // ข้ามเฟรมที่ไม่พบ QR
+            const parts = decodedText.split(' ');
+            const productId = parts.length >= 2 ? parts.pop() || '' : '';
+            const productName = parts.join(' ');
+
+            onScanSuccess(decodedText, productName, productId);
+          }
+          // ไม่ต้อง handle error — zxing จะ throw NotFoundException ทุก frame ที่ไม่เจอ QR
         }
       );
 
+      controlsRef.current = controls;
       setStatus('scanning');
     } catch (err: any) {
       console.error('Failed to start scanner:', err);
@@ -115,14 +105,23 @@ export default function QrScanner({ active, onScanSuccess }: QrScannerProps) {
       <h2 className="text-xl font-bold text-white">สแกน QR Code</h2>
 
       {/* 
-        Container สำหรับกล้อง: 
-        ใช้ ref แทน id เพื่อให้ React ไม่ยุ่งกับ DOM ภายใน
-        Library จะสร้าง <video> และ <canvas> ภายใน div นี้เอง
+        Video element สำหรับ zxing-js 
+        zxing จะ attach media stream เข้า video element โดยตรง
       */}
-      <div
-        ref={containerRef}
-        className="w-full max-w-xs overflow-hidden rounded-xl bg-black border border-white/20 aspect-square"
-      />
+      <div className="w-full max-w-xs overflow-hidden rounded-xl bg-black border border-white/20 aspect-square relative">
+        <video
+          ref={videoRef}
+          className="w-full h-full object-cover"
+          playsInline
+          muted
+        />
+        {/* Scan overlay */}
+        {status === 'scanning' && (
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <div className="w-48 h-48 border-2 border-[#F58220] rounded-lg opacity-70 animate-pulse" />
+          </div>
+        )}
+      </div>
 
       {status === 'starting' && (
         <p className="text-gray-400 text-sm animate-pulse">กำลังเปิดกล้อง...</p>
