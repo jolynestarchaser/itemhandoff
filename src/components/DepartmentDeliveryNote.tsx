@@ -12,101 +12,132 @@ export default function DepartmentDeliveryNote({ department, records }: Departme
     window.print();
   };
 
-  const formattedDate = new Date().toLocaleDateString('th-TH', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  });
+  const BLUE = '#4472C4';
+  const MIN_ROWS = 12; // จำนวน row ขั้นต่ำ (เติม row ว่างให้เต็มหน้า)
 
-  // Component ย่อยสำหรับ 1 หน้า A4 (1 สำเนา)
-  const NotePage = ({ title, copyLabel }: { title: string; copyLabel: string }) => (
-    <div className="print-page bg-white text-black" style={{ fontFamily: 'serif' }}>
-      <div style={{ padding: '15mm', height: '267mm', boxSizing: 'border-box', display: 'flex', flexDirection: 'column' }}>
-        {/* Header */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8mm' }}>
-          <div>
-            <h1 style={{ fontSize: '16pt', fontWeight: 'bold', margin: 0, letterSpacing: '1px' }}>
-              {title}
-            </h1>
-            <p style={{ fontSize: '9pt', color: '#666', margin: '2mm 0 0 0' }}>
-              Inventory Handoff System
-            </p>
-          </div>
-          <div style={{ textAlign: 'right' }}>
-            <p style={{ fontSize: '9pt', fontWeight: 600, color: '#444', margin: 0 }}>{copyLabel}</p>
-            <p style={{ fontSize: '9pt', color: '#666', margin: '1mm 0 0 0' }}>{formattedDate}</p>
-          </div>
-        </div>
+  // สร้าง label A, B, C ... สำหรับแต่ละสินค้า
+  const labeledRecords = records.map((r, i) => ({
+    ...r,
+    label: String.fromCharCode(65 + i), // A, B, C, ...
+  }));
 
-        {/* Department info */}
-        <div style={{ marginBottom: '6mm', padding: '4mm 6mm', backgroundColor: '#f5f5f5', border: '1px solid #ddd', borderRadius: '2mm' }}>
-          <p style={{ fontSize: '9pt', color: '#888', margin: '0 0 1mm 0', textTransform: 'uppercase', fontWeight: 600 }}>แผนกผู้รับมอบ</p>
-          <p style={{ fontSize: '14pt', fontWeight: 'bold', margin: 0, color: '#333' }}>{department}</p>
+  // เติม row ว่างให้ครบ MIN_ROWS
+  const emptyRowsCount = Math.max(0, MIN_ROWS - records.length);
+
+  // Component สำหรับ 1 หน้า A4
+  const NotePage = ({ copyType }: { copyType: 'sender' | 'receiver' }) => (
+    <div className="print-page bg-white text-black" style={{ fontFamily: "'TH Sarabun New', 'Sarabun', serif", display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ padding: '15mm 20mm', width: '100%', boxSizing: 'border-box' }}>
+
+        {/* Title */}
+        <h1 style={{ textAlign: 'center', fontSize: '16pt', fontWeight: 'bold', margin: '0 0 6mm 0' }}>
+          ใบส่งสินค้าชั่วคราว
+        </h1>
+
+        {/* วันที่ส่ง / หน่วยงาน */}
+        <div style={{ marginBottom: '6mm', fontSize: '11pt', lineHeight: '2' }}>
+          <p style={{ margin: 0 }}>
+            วันที่ส่ง {''}
+            <span style={{ borderBottom: '1px dotted #333', display: 'inline-block', width: '55mm' }}>&nbsp;</span>
+          </p>
+          <p style={{ margin: 0 }}>
+            หน่วยงาน {''}
+            <span style={{ borderBottom: '1px dotted #333', display: 'inline-block', width: '55mm', fontWeight: 'bold' }}>
+              {department}
+            </span>
+          </p>
         </div>
 
         {/* Table */}
-        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '10pt' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11pt', marginBottom: '6mm' }}>
           <thead>
             <tr>
-              <th style={{ border: '1px solid #333', padding: '3mm 4mm', textAlign: 'center', backgroundColor: '#e8e8e8', fontWeight: 'bold', width: '10%' }}>
-                ลำดับ
-              </th>
-              <th style={{ border: '1px solid #333', padding: '3mm 4mm', textAlign: 'left', backgroundColor: '#e8e8e8', fontWeight: 'bold', width: '50%' }}>
+              <th style={{
+                border: '1px solid #999',
+                padding: '2.5mm 4mm',
+                textAlign: 'left',
+                backgroundColor: BLUE,
+                color: 'white',
+                fontWeight: 'bold',
+                width: '70%',
+              }}>
                 ชื่อสินค้า
               </th>
-              <th style={{ border: '1px solid #333', padding: '3mm 4mm', textAlign: 'center', backgroundColor: '#e8e8e8', fontWeight: 'bold', width: '20%' }}>
-                รหัสสินค้า
-              </th>
-              <th style={{ border: '1px solid #333', padding: '3mm 4mm', textAlign: 'center', backgroundColor: '#e8e8e8', fontWeight: 'bold', width: '20%' }}>
-                วันที่บันทึก
+              <th style={{
+                border: '1px solid #999',
+                padding: '2.5mm 4mm',
+                textAlign: 'left',
+                backgroundColor: BLUE,
+                color: 'white',
+                fontWeight: 'bold',
+                width: '30%',
+              }}>
+                Serial Number
               </th>
             </tr>
           </thead>
           <tbody>
-            {records.length > 0 ? (
-              records.map((record, index) => (
-                <tr key={record.id}>
-                  <td style={{ border: '1px solid #333', padding: '2mm 4mm', textAlign: 'center' }}>
-                    {index + 1}
-                  </td>
-                  <td style={{ border: '1px solid #333', padding: '2mm 4mm' }}>
-                    {record.productName}
-                  </td>
-                  <td style={{ border: '1px solid #333', padding: '2mm 4mm', textAlign: 'center', fontFamily: 'monospace' }}>
-                    {record.productId}
-                  </td>
-                  <td style={{ border: '1px solid #333', padding: '2mm 4mm', textAlign: 'center', fontSize: '9pt' }}>
-                    {new Date(record.createdAt).toLocaleDateString('th-TH', { day: '2-digit', month: '2-digit', year: '2-digit' })}
-                  </td>
-                </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan={4} style={{ border: '1px solid #333', padding: '6mm', textAlign: 'center', color: '#999', fontStyle: 'italic' }}>
-                  ไม่มีรายการสินค้า
+            {labeledRecords.map((record) => (
+              <tr key={record.id}>
+                <td style={{ border: '1px solid #999', padding: '2mm 4mm', verticalAlign: 'top' }}>
+                  {record.label}. {record.productName}
+                </td>
+                <td style={{ border: '1px solid #999', padding: '2mm 4mm', verticalAlign: 'top' }}>
+                  {record.productId}
                 </td>
               </tr>
-            )}
+            ))}
+            {/* Empty rows */}
+            {Array.from({ length: emptyRowsCount }).map((_, i) => (
+              <tr key={`empty-${i}`}>
+                <td style={{ border: '1px solid #999', padding: '2mm 4mm', height: '7mm' }}>&nbsp;</td>
+                <td style={{ border: '1px solid #999', padding: '2mm 4mm', height: '7mm' }}>&nbsp;</td>
+              </tr>
+            ))}
           </tbody>
         </table>
 
-        <p style={{ fontSize: '9pt', color: '#666', marginTop: '4mm', textAlign: 'right' }}>
-          จำนวนรวม: <strong style={{ color: '#333' }}>{records.length}</strong> รายการ
-        </p>
-
-        {/* Signature section — pushed to bottom */}
-        <div style={{ marginTop: 'auto', display: 'flex', justifyContent: 'space-between', gap: '20mm', paddingTop: '15mm' }}>
-          <div style={{ flex: 1, textAlign: 'center' }}>
-            <div style={{ borderBottom: '1px solid #333', width: '100%', marginBottom: '3mm' }}>&nbsp;</div>
-            <p style={{ fontSize: '10pt', fontWeight: 600, margin: 0 }}>ผู้ส่งมอบ</p>
-            <p style={{ fontSize: '8pt', color: '#888', marginTop: '1mm' }}>วันที่ ___/___/______</p>
+        {/* Signature section */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', gap: '15mm', marginTop: '12mm', fontSize: '11pt' }}>
+          {/* ผู้รับสินค้า */}
+          <div style={{ flex: 1 }}>
+            <p style={{ fontWeight: 'bold', margin: '0 0 3mm 0', textAlign: 'center' }}>ผู้รับสินค้า</p>
+            <p style={{ margin: '0 0 1mm 0', color: '#666', fontSize: '10pt' }}>
+              {copyType === 'receiver' ? department : ''}
+            </p>
+            <p style={{ margin: '8mm 0 0 0' }}>
+              ลายมือชื่อ {''}
+              <span style={{ borderBottom: '1px dotted #333', display: 'inline-block', width: '40mm' }}>&nbsp;</span>
+            </p>
+            <p style={{ margin: '5mm 0 0 0' }}>
+              ชื่อ {''}
+              <span style={{ borderBottom: '1px dotted #333', display: 'inline-block', width: '45mm' }}>&nbsp;</span>
+            </p>
+            <p style={{ margin: '5mm 0 0 0' }}>
+              วันที่ {''}
+              <span style={{ borderBottom: '1px dotted #333', display: 'inline-block', width: '45mm' }}>&nbsp;</span>
+            </p>
           </div>
-          <div style={{ flex: 1, textAlign: 'center' }}>
-            <div style={{ borderBottom: '1px solid #333', width: '100%', marginBottom: '3mm' }}>&nbsp;</div>
-            <p style={{ fontSize: '10pt', fontWeight: 600, margin: 0 }}>ผู้รับมอบ</p>
-            <p style={{ fontSize: '8pt', color: '#888', marginTop: '1mm' }}>วันที่ ___/___/______</p>
+
+          {/* ผู้ส่งสินค้า */}
+          <div style={{ flex: 1 }}>
+            <p style={{ fontWeight: 'bold', margin: '0 0 3mm 0', textAlign: 'center' }}>ผู้ส่งสินค้า</p>
+            <p style={{ margin: '0 0 1mm 0', color: '#666', fontSize: '10pt' }}>&nbsp;</p>
+            <p style={{ margin: '8mm 0 0 0' }}>
+              ลายมือชื่อ {''}
+              <span style={{ borderBottom: '1px dotted #333', display: 'inline-block', width: '40mm' }}>&nbsp;</span>
+            </p>
+            <p style={{ margin: '5mm 0 0 0' }}>
+              ชื่อ {''}
+              <span style={{ borderBottom: '1px dotted #333', display: 'inline-block', width: '45mm' }}>&nbsp;</span>
+            </p>
+            <p style={{ margin: '5mm 0 0 0' }}>
+              วันที่ {''}
+              <span style={{ borderBottom: '1px dotted #333', display: 'inline-block', width: '45mm' }}>&nbsp;</span>
+            </p>
           </div>
         </div>
+
       </div>
     </div>
   );
@@ -128,8 +159,8 @@ export default function DepartmentDeliveryNote({ department, records }: Departme
 
       {/* 2 หน้า A4 แยกกัน */}
       <div className="print-only">
-        <NotePage title="ใบส่งมอบสินค้าชั่วคราว" copyLabel="สำเนาผู้ส่ง" />
-        <NotePage title="ใบส่งมอบสินค้าชั่วคราว" copyLabel="สำเนาผู้รับ" />
+        <NotePage copyType="sender" />
+        <NotePage copyType="receiver" />
       </div>
     </div>
   );

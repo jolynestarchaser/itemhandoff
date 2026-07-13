@@ -11,22 +11,53 @@ export default function AllDepartmentsSummaryNote({ records }: AllDepartmentsSum
     window.print();
   };
 
-  const formattedDate = new Date().toLocaleDateString('th-TH', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  });
+  const BLUE = '#4472C4';
+  const MIN_ROWS = 15; // จำนวน row ขั้นต่ำ
 
-  // จัดกลุ่ม records ตามแผนก
-  const groupedByDept: Record<string, HandoffRecord[]> = {};
-  records.forEach((record) => {
-    if (!groupedByDept[record.department]) {
-      groupedByDept[record.department] = [];
+  // รวบรวมรายการสินค้าที่ไม่ซ้ำ (unique product names)
+  const uniqueProducts: { label: string; name: string }[] = [];
+  const productNameSet = new Set<string>();
+  records.forEach((r) => {
+    if (!productNameSet.has(r.productName)) {
+      productNameSet.add(r.productName);
+      uniqueProducts.push({
+        label: String.fromCharCode(65 + uniqueProducts.length), // A, B, C, ...
+        name: r.productName,
+      });
     }
-    groupedByDept[record.department].push(record);
   });
 
-  const departments = Object.keys(groupedByDept).sort();
+  // รวบรวม departments ที่ไม่ซ้ำ
+  const departmentSet = new Set<string>();
+  records.forEach((r) => departmentSet.add(r.department));
+  const departments = Array.from(departmentSet).sort();
+
+  // สร้าง cross-reference matrix: dept → product → count
+  const matrix: Record<string, Record<string, number>> = {};
+  departments.forEach((dept) => {
+    matrix[dept] = {};
+    uniqueProducts.forEach((p) => {
+      matrix[dept][p.name] = 0;
+    });
+  });
+
+  records.forEach((r) => {
+    if (matrix[r.department] && matrix[r.department][r.productName] !== undefined) {
+      matrix[r.department][r.productName]++;
+    }
+  });
+
+  // คำนวณผลรวมต่อ product
+  const totals: Record<string, number> = {};
+  uniqueProducts.forEach((p) => {
+    totals[p.name] = 0;
+    departments.forEach((dept) => {
+      totals[p.name] += matrix[dept][p.name];
+    });
+  });
+
+  // เติม row ว่าง
+  const emptyRowsCount = Math.max(0, MIN_ROWS - departments.length);
 
   return (
     <div>
@@ -43,99 +74,96 @@ export default function AllDepartmentsSummaryNote({ records }: AllDepartmentsSum
         </button>
       </div>
 
-      {/* หน้าพิมพ์ — ตัดหน้าอัตโนมัติ */}
+      {/* หน้าพิมพ์ */}
       <div className="print-only">
-        <div className="print-auto-page" style={{ fontFamily: 'serif' }}>
-          <div style={{ padding: '15mm' }}>
-            {/* Header */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8mm' }}>
-              <div>
-                <h1 style={{ fontSize: '16pt', fontWeight: 'bold', margin: 0, letterSpacing: '1px' }}>
-                  สรุปเอกสารส่งมอบสินค้าทั้งหมด
-                </h1>
-                <p style={{ fontSize: '9pt', color: '#666', margin: '2mm 0 0 0' }}>
-                  Inventory Handoff System
-                </p>
-              </div>
-              <div style={{ textAlign: 'right' }}>
-                <p style={{ fontSize: '9pt', color: '#666', margin: 0 }}>{formattedDate}</p>
-                <p style={{ fontSize: '9pt', color: '#666', margin: '1mm 0 0 0' }}>
-                  รวม {records.length} รายการ / {departments.length} แผนก
-                </p>
-              </div>
+        <div className="print-auto-page bg-white text-black" style={{ fontFamily: "'TH Sarabun New', 'Sarabun', serif" }}>
+          <div style={{ padding: '15mm 20mm' }}>
+
+            {/* Title */}
+            <h1 style={{ textAlign: 'center', fontSize: '16pt', fontWeight: 'bold', margin: '0 0 2mm 0' }}>
+              ใบสรุปรายการส่งมอบ
+            </h1>
+            <p style={{ textAlign: 'center', fontSize: '12pt', margin: '0 0 8mm 0' }}>
+              เลขที่สัญญา .......................
+            </p>
+
+            {/* รายการสินค้า */}
+            <div style={{ marginBottom: '6mm', fontSize: '11pt' }}>
+              <p style={{ fontWeight: 'bold', margin: '0 0 3mm 0' }}>รายการสินค้า</p>
+              <ul style={{ margin: 0, paddingLeft: '8mm', listStyleType: 'disc' }}>
+                {uniqueProducts.map((p) => (
+                  <li key={p.label} style={{ marginBottom: '1.5mm', lineHeight: '1.6' }}>
+                    {p.name} ({p.label})
+                  </li>
+                ))}
+              </ul>
             </div>
 
-            {/* Table ตามแผนก */}
-            {departments.map((dept) => (
-              <div key={dept} style={{ marginBottom: '8mm', pageBreakInside: 'avoid' }}>
-                {/* Department header */}
-                <div style={{ backgroundColor: '#e8e8e8', padding: '3mm 5mm', borderRadius: '1mm', marginBottom: '2mm' }}>
-                  <h2 style={{ fontSize: '12pt', fontWeight: 'bold', margin: 0, color: '#333' }}>
-                    แผนก {dept}
-                    <span style={{ fontSize: '9pt', fontWeight: 'normal', color: '#666', marginLeft: '4mm' }}>
-                      ({groupedByDept[dept].length} รายการ)
-                    </span>
-                  </h2>
-                </div>
-
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '10pt' }}>
-                  <thead>
-                    <tr>
-                      <th style={{ border: '1px solid #333', padding: '2mm 3mm', textAlign: 'center', backgroundColor: '#f5f5f5', fontWeight: 'bold', width: '8%' }}>
-                        #
-                      </th>
-                      <th style={{ border: '1px solid #333', padding: '2mm 3mm', textAlign: 'left', backgroundColor: '#f5f5f5', fontWeight: 'bold', width: '45%' }}>
-                        ชื่อสินค้า
-                      </th>
-                      <th style={{ border: '1px solid #333', padding: '2mm 3mm', textAlign: 'center', backgroundColor: '#f5f5f5', fontWeight: 'bold', width: '20%' }}>
-                        รหัสสินค้า
-                      </th>
-                      <th style={{ border: '1px solid #333', padding: '2mm 3mm', textAlign: 'center', backgroundColor: '#f5f5f5', fontWeight: 'bold', width: '27%' }}>
-                        วันที่บันทึก
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {groupedByDept[dept].map((record, index) => (
-                      <tr key={record.id}>
-                        <td style={{ border: '1px solid #333', padding: '2mm 3mm', textAlign: 'center' }}>
-                          {index + 1}
-                        </td>
-                        <td style={{ border: '1px solid #333', padding: '2mm 3mm' }}>
-                          {record.productName}
-                        </td>
-                        <td style={{ border: '1px solid #333', padding: '2mm 3mm', textAlign: 'center', fontFamily: 'monospace' }}>
-                          {record.productId}
-                        </td>
-                        <td style={{ border: '1px solid #333', padding: '2mm 3mm', textAlign: 'center', fontSize: '9pt' }}>
-                          {new Date(record.createdAt).toLocaleDateString('th-TH', { day: '2-digit', month: '2-digit', year: '2-digit' })}
-                        </td>
-                      </tr>
+            {/* Cross-reference table */}
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11pt', marginBottom: '8mm' }}>
+              <thead>
+                <tr>
+                  <th style={{
+                    border: '1px solid #999',
+                    padding: '2.5mm 4mm',
+                    textAlign: 'center',
+                    backgroundColor: BLUE,
+                    color: 'white',
+                    fontWeight: 'bold',
+                  }}>
+                    หน่วยงาน
+                  </th>
+                  {uniqueProducts.map((p) => (
+                    <th key={p.label} style={{
+                      border: '1px solid #999',
+                      padding: '2.5mm 4mm',
+                      textAlign: 'center',
+                      backgroundColor: BLUE,
+                      color: 'white',
+                      fontWeight: 'bold',
+                      width: `${Math.min(15, 60 / Math.max(uniqueProducts.length, 1))}%`,
+                    }}>
+                      {p.label}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {departments.map((dept) => (
+                  <tr key={dept}>
+                    <td style={{ border: '1px solid #999', padding: '2mm 4mm' }}>
+                      {dept}
+                    </td>
+                    {uniqueProducts.map((p) => (
+                      <td key={p.label} style={{ border: '1px solid #999', padding: '2mm 4mm', textAlign: 'center' }}>
+                        {matrix[dept][p.name] > 0 ? matrix[dept][p.name] : ''}
+                      </td>
                     ))}
-                  </tbody>
-                </table>
-              </div>
-            ))}
+                  </tr>
+                ))}
+                {/* Empty rows */}
+                {Array.from({ length: emptyRowsCount }).map((_, i) => (
+                  <tr key={`empty-${i}`}>
+                    <td style={{ border: '1px solid #999', padding: '2mm 4mm', height: '7mm' }}>&nbsp;</td>
+                    {uniqueProducts.map((p) => (
+                      <td key={p.label} style={{ border: '1px solid #999', padding: '2mm 4mm', height: '7mm' }}>&nbsp;</td>
+                    ))}
+                  </tr>
+                ))}
+                {/* Totals row */}
+                <tr>
+                  <td style={{ border: '1px solid #999', padding: '2mm 4mm', fontWeight: 'bold', textAlign: 'right' }}>
+                    รวม
+                  </td>
+                  {uniqueProducts.map((p) => (
+                    <td key={p.label} style={{ border: '1px solid #999', padding: '2mm 4mm', textAlign: 'center', fontWeight: 'bold' }}>
+                      {totals[p.name] > 0 ? totals[p.name] : ''}
+                    </td>
+                  ))}
+                </tr>
+              </tbody>
+            </table>
 
-            {departments.length === 0 && (
-              <div style={{ textAlign: 'center', padding: '20mm', color: '#999', fontStyle: 'italic', fontSize: '11pt' }}>
-                ไม่มีข้อมูลการส่งมอบ
-              </div>
-            )}
-
-            {/* Signature section */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', gap: '20mm', paddingTop: '15mm', pageBreakInside: 'avoid' }}>
-              <div style={{ flex: 1, textAlign: 'center' }}>
-                <div style={{ borderBottom: '1px solid #333', width: '100%', marginBottom: '3mm' }}>&nbsp;</div>
-                <p style={{ fontSize: '10pt', fontWeight: 600, margin: 0 }}>ผู้จัดทำเอกสาร</p>
-                <p style={{ fontSize: '8pt', color: '#888', marginTop: '1mm' }}>วันที่ ___/___/______</p>
-              </div>
-              <div style={{ flex: 1, textAlign: 'center' }}>
-                <div style={{ borderBottom: '1px solid #333', width: '100%', marginBottom: '3mm' }}>&nbsp;</div>
-                <p style={{ fontSize: '10pt', fontWeight: 600, margin: 0 }}>ผู้ตรวจสอบ</p>
-                <p style={{ fontSize: '8pt', color: '#888', marginTop: '1mm' }}>วันที่ ___/___/______</p>
-              </div>
-            </div>
           </div>
         </div>
       </div>
