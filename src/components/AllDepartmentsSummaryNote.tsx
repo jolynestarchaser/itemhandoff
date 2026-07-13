@@ -11,56 +11,117 @@ export default function AllDepartmentsSummaryNote({ records }: AllDepartmentsSum
     window.print();
   };
 
-  const BLUE = '#4472C4';
-  const MIN_ROWS = 15; // จำนวน row ขั้นต่ำ
-
-  // รวบรวมรายการสินค้าที่ไม่ซ้ำ (unique product names)
-  const uniqueProducts: { label: string; name: string }[] = [];
-  const productNameSet = new Set<string>();
-  records.forEach((r) => {
-    if (!productNameSet.has(r.productName)) {
-      productNameSet.add(r.productName);
-      uniqueProducts.push({
-        label: String.fromCharCode(65 + uniqueProducts.length), // A, B, C, ...
-        name: r.productName,
-      });
-    }
-  });
+  // กำหนดรายการสินค้าหลัก (A, B, C) ตามโครงสร้าง
+  const uniqueProducts = [
+    { label: 'A', name: 'รถเข็นคอมพิวเตอร์แบบ Notebook Cart สำหรับใช้ในการตรวจเยี่ยมผู้ป่วยใน (Ward Rounds)', shortName: 'APIX Round A' },
+    { label: 'B', name: 'รถเข็นคอมพิวเตอร์ All-in-one สำหรับงานเจาะเลือด (Phlebotomy Computer Cart)', shortName: 'APIX RX B' },
+    { label: 'C', name: 'รถเข็นคอมพิวเตอร์ All-in-one พร้อมลิ้นชักจัดเก็บยา ๒๐ ช่อง (Drug Administration Cart)', shortName: 'APIX Flow C' },
+  ];
 
   // รวบรวม departments ที่ไม่ซ้ำ
   const departmentSet = new Set<string>();
   records.forEach((r) => departmentSet.add(r.department));
   const departments = Array.from(departmentSet).sort();
 
-  // สร้าง cross-reference matrix: dept → product → count
+  // สร้าง cross-reference matrix: dept → label → count
   const matrix: Record<string, Record<string, number>> = {};
   departments.forEach((dept) => {
     matrix[dept] = {};
     uniqueProducts.forEach((p) => {
-      matrix[dept][p.name] = 0;
+      matrix[dept][p.label] = 0;
     });
   });
 
   records.forEach((r) => {
-    if (matrix[r.department] && matrix[r.department][r.productName] !== undefined) {
-      matrix[r.department][r.productName]++;
+    // จับคู่ productName จาก DB กับรายการสินค้าที่กำหนดไว้
+    const matchedProduct = uniqueProducts.find(p => 
+      p.name === r.productName || 
+      p.shortName === r.productName ||
+      r.productName.includes(p.shortName) ||
+      p.shortName.includes(r.productName)
+    );
+
+    if (matchedProduct && matrix[r.department]) {
+      matrix[r.department][matchedProduct.label]++;
     }
   });
 
   // คำนวณผลรวมต่อ product
   const totals: Record<string, number> = {};
   uniqueProducts.forEach((p) => {
-    totals[p.name] = 0;
+    totals[p.label] = 0;
     departments.forEach((dept) => {
-      totals[p.name] += matrix[dept][p.name];
+      totals[p.label] += matrix[dept][p.label];
     });
   });
 
-  // เติม row ว่าง
-  const emptyRowsCount = Math.max(0, MIN_ROWS - departments.length);
-
   return (
     <div>
+      <style dangerouslySetInnerHTML={{ __html: `
+        .document-style {
+          font-size: 16px; /* Base size สำหรับ 1rem */
+          font-family: 'Sarabun', 'TH Sarabun New', sans-serif;
+          color: #000;
+          background: #fff;
+          padding: 3rem;
+          margin-bottom: 2rem;
+          box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        @media print {
+          @page {
+            size: A4;
+            margin: 3rem; /* จัดเอกสารให้อยู่ตรงกลาง ซ้าย-ขวา-บน-ล่าง เท่ากัน */
+          }
+          body {
+            margin: 0;
+            padding: 0;
+            background: #fff;
+          }
+          .document-style {
+            padding: 0;
+            margin-bottom: 0;
+            box-shadow: none;
+          }
+        }
+        .document-style h1 {
+          font-size: 1.5em; /* ใช้ em สำหรับ Heading */
+          text-align: center;
+          margin-bottom: 1rem;
+          font-weight: bold;
+        }
+        .document-style .contract-no {
+          text-align: center;
+          font-size: 1rem;
+          margin-bottom: 2rem;
+        }
+        .document-style table {
+          width: 100%;
+          border-collapse: collapse;
+          margin-bottom: 2rem;
+        }
+        .document-style th, .document-style td {
+          border: 0.1rem solid #000;
+          padding: 0.5rem 1rem;
+          font-size: 1rem;
+          page-break-inside: avoid;
+        }
+        .document-style th {
+          background-color: #f9f9f9;
+        }
+        .document-style .legend-area {
+          font-size: 0.9rem;
+          margin-top: 1.5rem;
+          page-break-inside: avoid;
+        }
+        .document-style .legend-area ul {
+          padding-left: 1.5rem;
+          margin-top: 0.5rem;
+        }
+        .document-style .legend-area li {
+          margin-bottom: 0.3rem;
+        }
+      `}} />
+
       {/* ปุ่มพิมพ์ (ซ่อนเมื่อพิมพ์) */}
       <div className="no-print mb-4">
         <button
@@ -74,97 +135,61 @@ export default function AllDepartmentsSummaryNote({ records }: AllDepartmentsSum
         </button>
       </div>
 
-      {/* หน้าพิมพ์ */}
-      <div className="print-only">
-        <div className="print-auto-page bg-white text-black" style={{ fontFamily: "'TH Sarabun New', 'Sarabun', serif" }}>
-          <div style={{ padding: '15mm 20mm' }}>
-
-            {/* Title */}
-            <h1 style={{ textAlign: 'center', fontSize: '16pt', fontWeight: 'bold', margin: '0 0 2mm 0' }}>
-              ใบสรุปรายการส่งมอบ
-            </h1>
-            <p style={{ textAlign: 'center', fontSize: '12pt', margin: '0 0 8mm 0' }}>
-              เลขที่สัญญา .......................
-            </p>
-
-            {/* รายการสินค้า */}
-            <div style={{ marginBottom: '6mm', fontSize: '11pt' }}>
-              <p style={{ fontWeight: 'bold', margin: '0 0 3mm 0' }}>รายการสินค้า</p>
-              <ul style={{ margin: 0, paddingLeft: '8mm', listStyleType: 'disc' }}>
+      <div className="document-style">
+        <h1>ใบสรุปรายการส่งมอบ</h1>
+        <p className="contract-no">เลขที่สัญญา ...........................................................</p>
+        
+        <table>
+          <thead>
+            <tr>
+              <th>ชื่อแผนก</th>
+              {uniqueProducts.map((p) => (
+                <th key={p.label} style={{ textAlign: 'center' }}>
+                  {p.label}<br />
+                  <span style={{ fontSize: '0.8em', fontWeight: 'normal' }}>({p.shortName})</span>
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {departments.map((dept) => (
+              <tr key={dept}>
+                <td>{dept}</td>
                 {uniqueProducts.map((p) => (
-                  <li key={p.label} style={{ marginBottom: '1.5mm', lineHeight: '1.6' }}>
-                    {p.name} ({p.label})
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            {/* Cross-reference table */}
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11pt', marginBottom: '8mm' }}>
-              <thead>
-                <tr>
-                  <th style={{
-                    border: '1px solid #999',
-                    padding: '2.5mm 4mm',
-                    textAlign: 'center',
-                    backgroundColor: BLUE,
-                    color: 'white',
-                    fontWeight: 'bold',
-                  }}>
-                    หน่วยงาน
-                  </th>
-                  {uniqueProducts.map((p) => (
-                    <th key={p.label} style={{
-                      border: '1px solid #999',
-                      padding: '2.5mm 4mm',
-                      textAlign: 'center',
-                      backgroundColor: BLUE,
-                      color: 'white',
-                      fontWeight: 'bold',
-                      width: `${Math.min(15, 60 / Math.max(uniqueProducts.length, 1))}%`,
-                    }}>
-                      {p.label}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {departments.map((dept) => (
-                  <tr key={dept}>
-                    <td style={{ border: '1px solid #999', padding: '2mm 4mm' }}>
-                      {dept}
-                    </td>
-                    {uniqueProducts.map((p) => (
-                      <td key={p.label} style={{ border: '1px solid #999', padding: '2mm 4mm', textAlign: 'center' }}>
-                        {matrix[dept][p.name] > 0 ? matrix[dept][p.name] : ''}
-                      </td>
-                    ))}
-                  </tr>
-                ))}
-                {/* Empty rows */}
-                {Array.from({ length: emptyRowsCount }).map((_, i) => (
-                  <tr key={`empty-${i}`}>
-                    <td style={{ border: '1px solid #999', padding: '2mm 4mm', height: '7mm' }}>&nbsp;</td>
-                    {uniqueProducts.map((p) => (
-                      <td key={p.label} style={{ border: '1px solid #999', padding: '2mm 4mm', height: '7mm' }}>&nbsp;</td>
-                    ))}
-                  </tr>
-                ))}
-                {/* Totals row */}
-                <tr>
-                  <td style={{ border: '1px solid #999', padding: '2mm 4mm', fontWeight: 'bold', textAlign: 'right' }}>
-                    รวม
+                  <td key={p.label} style={{ textAlign: 'center' }}>
+                    {matrix[dept][p.label] > 0 ? matrix[dept][p.label] : '-'}
                   </td>
-                  {uniqueProducts.map((p) => (
-                    <td key={p.label} style={{ border: '1px solid #999', padding: '2mm 4mm', textAlign: 'center', fontWeight: 'bold' }}>
-                      {totals[p.name] > 0 ? totals[p.name] : ''}
-                    </td>
-                  ))}
-                </tr>
-              </tbody>
-            </table>
-
-          </div>
+                ))}
+              </tr>
+            ))}
+            {departments.length === 0 && (
+              <tr>
+                <td colSpan={uniqueProducts.length + 1} style={{ textAlign: 'center', padding: '2rem' }}>ไม่มีรายการจัดส่ง</td>
+              </tr>
+            )}
+            {/* Totals row */}
+            {departments.length > 0 && (
+              <tr>
+                <td style={{ fontWeight: 'bold', textAlign: 'right' }}>รวมทั้งหมด</td>
+                {uniqueProducts.map((p) => (
+                  <td key={p.label} style={{ textAlign: 'center', fontWeight: 'bold' }}>
+                    {totals[p.label] > 0 ? totals[p.label] : '-'}
+                  </td>
+                ))}
+              </tr>
+            )}
+          </tbody>
+        </table>
+        
+        <div className="legend-area">
+          <strong>คำอธิบายรายละเอียดสินค้ารายการ {uniqueProducts.map(p => p.label).join(', ')}:</strong>
+          <ul>
+            {uniqueProducts.map((p) => (
+              <li key={p.label}>
+                <strong>{p.label} ({p.name}):</strong> {p.name}
+              </li>
+            ))}
+          </ul>
         </div>
       </div>
     </div>
