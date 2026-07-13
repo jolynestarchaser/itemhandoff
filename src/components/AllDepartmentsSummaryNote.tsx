@@ -33,13 +33,15 @@ export default function AllDepartmentsSummaryNote({ records }: AllDepartmentsSum
   });
 
   records.forEach((r) => {
+    // แปลงชื่อเป็นตัวพิมพ์เล็กและตัดช่องว่างออกเพื่อการเปรียบเทียบที่แม่นยำขึ้น
+    const dbName = r.productName.toLowerCase().replace(/\s+/g, '');
+
     // จับคู่ productName จาก DB กับรายการสินค้าที่กำหนดไว้
-    const matchedProduct = uniqueProducts.find(p => 
-      p.name === r.productName || 
-      p.shortName === r.productName ||
-      r.productName.includes(p.shortName) ||
-      p.shortName.includes(r.productName)
-    );
+    const matchedProduct = uniqueProducts.find(p => {
+      const nameL = p.name.toLowerCase().replace(/\s+/g, '');
+      const shortL = p.shortName.toLowerCase().replace(/\s+/g, '');
+      return nameL === dbName || shortL === dbName || dbName.includes(shortL) || shortL.includes(dbName);
+    });
 
     if (matchedProduct && matrix[r.department]) {
       matrix[r.department][matchedProduct.label]++;
@@ -182,11 +184,11 @@ export default function AllDepartmentsSummaryNote({ records }: AllDepartmentsSum
         </table>
         
         <div className="legend-area">
-          <strong>คำอธิบายรายละเอียดสินค้ารายการ {uniqueProducts.map(p => p.label).join(', ')}:</strong>
+          <strong>คำอธิบายรายละเอียดสินค้ารายการ </strong>
           <ul>
             {uniqueProducts.map((p) => (
               <li key={p.label}>
-                <strong>{p.label} ({p.name}):</strong> {p.name}
+                <strong>{p.label} </strong> {p.name}
               </li>
             ))}
           </ul>
