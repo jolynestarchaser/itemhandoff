@@ -39,7 +39,7 @@ export default function DepartmentDeliveryNote({ department, records }: Departme
           <div className="info-dots">{formattedDate}</div>
         </div>
         <div className="info-row">
-          <div className="info-label">หน่วยงาน</div>
+          <div className="info-label">แผนก</div>
           <div className="info-dots">{department}</div>
         </div>
       </div>
