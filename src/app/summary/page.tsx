@@ -3,6 +3,7 @@ import AllDepartmentsSummaryNote from '@/components/AllDepartmentsSummaryNote';
 import ExportButton from '@/components/ExportButton';
 import Link from 'next/link';
 import { HandoffRecord } from '@prisma/client';
+import { departments as deptDict } from '@/lib/departments';
 
 // บังคับให้โหลดข้อมูลใหม่เสมอ (ไม่ cache) เพื่อให้แสดงรายการใหม่ล่าสุด
 export const dynamic = 'force-dynamic';
@@ -42,10 +43,12 @@ export default async function SummaryPage() {
 
         {/* ตารางแสดงข้อมูลแบ่งตามแผนก */}
         {departments.length > 0 ? (
-          departments.map((dept) => (
+          departments.map((dept) => {
+            const thaiName = deptDict.find(d => d.key === dept)?.nameTh || dept;
+            return (
             <div key={dept} className="mb-6">
               <div className="flex items-center gap-3 mb-3">
-                <h2 className="text-lg font-bold text-white">แผนก {dept}</h2>
+                <h2 className="text-lg font-bold text-white">แผนก {thaiName}</h2>
                 <span className="text-xs bg-[#F58220]/20 text-[#F58220] px-2 py-1 rounded-full font-semibold">
                   {groupedByDept[dept].length} รายการ
                 </span>
