@@ -1,6 +1,7 @@
 export const departments = [
-  { key: "Ros200Years", nameTh: "รส.200 ปี", nameEn: "Ros 200 Years" },
-  { key: "Ros200YearsUnderwaterMed", nameTh: "รส.200 ปี บนเวชศาสตร์ใต้น้ำ", nameEn: "Ros 200 Years - Hyperbaric Medicine" },
+  { key: "Ros200Years1", nameTh: "รส.200 ปี 1", nameEn: "Ros 200 Years 1" },
+  { key: "Ros200Years2", nameTh: "รส.200 ปี 2", nameEn: "Ros 200 Years 2" },
+  { key: "UnderwaterMed", nameTh: "เวชศาสตร์ใต้น้ำ", nameEn: "UnderwaterMed" },
   { key: "EntOutpatient", nameTh: "โสต ศอ นาสิก", nameEn: "ENT Outpatient Clinic" },
   { key: "EyeOutpatient", nameTh: "จักษุ", nameEn: "Ophthalmology Outpatient Clinic" },
   { key: "OperatingRoom", nameTh: "OR", nameEn: "Operating Room (OR)" },
