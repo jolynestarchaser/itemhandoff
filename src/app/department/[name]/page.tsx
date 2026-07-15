@@ -23,7 +23,6 @@ export default function DepartmentPage() {
   const [manualCode, setManualCode] = useState('');
   const [selectedProduct, setSelectedProduct] = useState('');
   const [customProduct, setCustomProduct] = useState('');
-  const [pendingScan, setPendingScan] = useState<{qrData: string, productName: string, productId: string} | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<HandoffRecord | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -72,22 +71,42 @@ export default function DepartmentPage() {
     }
   }, [department, fetchRecords]);
 
-  // เมื่อสแกน QR สำเร็จ หรือ กรอก manual
-  const handleScanSuccess = useCallback(async (qrData: string, productName: string, productId: string) => {
+  // เมื่อสแกน QR สำเร็จ ให้เด้งหน้าต่างกรอก Manual แทน
+  const handleScanSuccess = useCallback((qrData: string, productName: string, rawProductId: string) => {
     setDuplicateInfo(null);
     setSuccessMsg('');
     setErrorMsg('');
     setShowScanner(false);
-    setShowManualEntry(false);
-
-    // เช็คว่า QR code รหัสขึ้นต้นด้วย C หรือ c
-    if (productId.toUpperCase().startsWith('C')) {
-      setPendingScan({ qrData, productName, productId });
-      return;
+    
+    // Parse the scanned rawProductId
+    let prefix = '';
+    let numericPart = rawProductId;
+    const match = rawProductId.match(/^([a-zA-Z]+)(.*)$/);
+    if (match) {
+      prefix = match[1].toUpperCase();
+      numericPart = match[2];
+      if (numericPart && !isNaN(Number(numericPart))) {
+        numericPart = numericPart.padStart(3, '0');
+      }
     }
-
-    await processScan(qrData, productName, productId);
-  }, [processScan]);
+    
+    // Map prefix to selectedProduct
+    let productType = '';
+    if (prefix === 'A') productType = 'APIX Round A';
+    else if (prefix === 'B') productType = 'APIX RX B';
+    else if (prefix === 'C') productType = 'APIX Flow C';
+    else productType = 'อื่นๆ';
+    
+    setSelectedProduct(productType);
+    if (productType === 'อื่นๆ') {
+      setCustomProduct(productName || '');
+    }
+    
+    setManualCode(numericPart);
+    
+    // Open the manual entry form
+    setShowManualEntry(true);
+  }, []);
 
   const getPrefix = () => {
     if (selectedProduct === 'APIX Round A') return 'A';
@@ -104,7 +123,7 @@ export default function DepartmentPage() {
     const rawProductId = manualCode.trim();
     // ถ้ามี prefix อยู่แล้วในสิ่งที่ user พิมพ์มา (เผื่อหลุดมา) ให้ตัดออกก่อนแล้วค่อยต่อใหม่
     // แต่ด้วย UI ที่บังคับกรอกเฉพาะตัวเลข โอกาสเกิดจะน้อยลง
-    const numericPart = prefix ? rawProductId.replace(/\D/g, '') : rawProductId;
+    const numericPart = prefix ? rawProductId.replace(/\D/g, '').padStart(3, '0') : rawProductId;
     const productId = prefix ? prefix + numericPart : rawProductId;
     
     const finalProductName = selectedProduct === 'อื่นๆ' ? customProduct.trim() : selectedProduct;
@@ -357,47 +376,6 @@ export default function DepartmentPage() {
       {!showScanner && !showManualEntry && records.length > 0 && (
         <div className="bg-white rounded-xl shadow-xl overflow-hidden print-content border border-gray-200">
           <DepartmentDeliveryNote department={departmentNameTh} records={records} />
-        </div>
-      )}
-
-      {/* C prefix prompt modal */}
-      {pendingScan && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 no-print">
-          <div className="bg-[#1C1C1E] border border-white/10 rounded-2xl p-6 w-full max-w-md shadow-2xl">
-            <h3 className="text-lg font-bold text-[#F58220] mb-2">พบรหัสที่ขึ้นต้นด้วย C</h3>
-            <p className="text-gray-300 mb-6 text-sm leading-relaxed">
-              ระบบพบรหัส: <strong className="text-white text-base bg-white/10 px-2 py-1 rounded">{pendingScan.productId}</strong>
-              <br className="mb-2" />คุณต้องการเปลี่ยนตัวอักษรนำหน้าเป็น B หรือใช้เป็นรหัส C ตามเดิม?
-            </p>
-            <div className="flex gap-3 flex-col sm:flex-row">
-              <button
-                onClick={() => {
-                  const newProductId = 'B' + pendingScan.productId.substring(1);
-                  const newQrData = pendingScan.productName ? `${pendingScan.productName} ${newProductId}` : newProductId;
-                  setPendingScan(null);
-                  processScan(newQrData, pendingScan.productName, newProductId);
-                }}
-                className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl transition-all flex items-center justify-center gap-2"
-              >
-                เปลี่ยนเป็น B
-              </button>
-              <button
-                onClick={() => {
-                  setPendingScan(null);
-                  processScan(pendingScan.qrData, pendingScan.productName, pendingScan.productId);
-                }}
-                className="flex-1 py-3 bg-[#F58220] hover:bg-[#d9721a] text-white font-semibold rounded-xl transition-all flex items-center justify-center gap-2"
-              >
-                ใช้ C ตามเดิม
-              </button>
-            </div>
-            <button
-              onClick={() => setPendingScan(null)}
-              className="mt-4 w-full py-2 bg-white/5 hover:bg-white/10 text-white font-semibold rounded-xl transition-all"
-            >
-              ยกเลิก
-            </button>
-          </div>
         </div>
       )}
 
