@@ -78,7 +78,8 @@ export default async function SummaryPage() {
                 </table>
               </div>
             </div>
-          ))
+            );
+          })
         ) : (
           <div className="text-center py-12 text-gray-500 italic border border-white/5 rounded-2xl bg-white/2">
             <p className="text-lg mb-2">ยังไม่มีข้อมูลการส่งมอบ</p>
