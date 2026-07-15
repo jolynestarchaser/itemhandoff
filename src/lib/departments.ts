@@ -19,7 +19,7 @@ export const departments = [
   { key: "CathLab", nameTh: "Cath Lab", nameEn: "Cardiac Catheterization Laboratory (Cath Lab)" },
   { key: "SurgicalIcu", nameTh: "ICU ศัลยกรรม", nameEn: "Surgical ICU (SICU)" },
   { key: "Ccu", nameTh: "CCU", nameEn: "Coronary Care Unit (CCU)" },
-  { key: "IntermediateCcu", nameTh: "ICCUศัลยกรรมประสาท", nameEn: "Intermediate CCU (ICCU)" },
+  { key: "IntermediateCcu", nameTh: "ICCU ", nameEn: "Intensive Cardiac Care Unit" },
   { key: "NeurosurgicalIcu", nameTh: "ศัลยกรรมประสาท", nameEn: "Neurosurgical ICU" },
   { key: "OrthopedicWard", nameTh: "ศัลยกรรมกระดูก", nameEn: "Orthopedic Ward" },
   { key: "FemaleSurgicalWard", nameTh: "ศัลยกรรมหญิง", nameEn: "Female Surgical Ward" },
