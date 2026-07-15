@@ -2,6 +2,7 @@
 
 import * as XLSX from 'xlsx';
 import { HandoffRecord } from '@prisma/client';
+import { departments as deptDict } from '@/lib/departments';
 
 interface ExportButtonProps {
   records: HandoffRecord[];
@@ -15,7 +16,7 @@ export default function ExportButton({ records }: ExportButtonProps) {
       'Product Name': r.productName,
       'Product ID': r.productId,
       'QR Data': r.qrData,
-      'Department': r.department,
+      'Department': deptDict.find(d => d.key === r.department)?.nameTh || r.department,
       'Date & Time': new Date(r.createdAt).toLocaleString()
     }));
 

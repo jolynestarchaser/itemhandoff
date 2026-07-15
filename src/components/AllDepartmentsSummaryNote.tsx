@@ -1,6 +1,7 @@
 'use client';
 
 import { HandoffRecord } from '@prisma/client';
+import { departments as deptDict } from '@/lib/departments';
 
 interface AllDepartmentsSummaryNoteProps {
   records: HandoffRecord[];
@@ -154,16 +155,19 @@ export default function AllDepartmentsSummaryNote({ records }: AllDepartmentsSum
             </tr>
           </thead>
           <tbody>
-            {departments.map((dept) => (
-              <tr key={dept}>
-                <td>{dept}</td>
-                {uniqueProducts.map((p) => (
-                  <td key={p.label} style={{ textAlign: 'center' }}>
-                    {matrix[dept][p.label] > 0 ? matrix[dept][p.label] : '-'}
-                  </td>
-                ))}
-              </tr>
-            ))}
+            {departments.map((dept) => {
+              const thaiName = deptDict.find(d => d.key === dept)?.nameTh || dept;
+              return (
+                <tr key={dept}>
+                  <td>{thaiName}</td>
+                  {uniqueProducts.map((p) => (
+                    <td key={p.label} style={{ textAlign: 'center' }}>
+                      {matrix[dept][p.label] > 0 ? matrix[dept][p.label] : '-'}
+                    </td>
+                  ))}
+                </tr>
+              );
+            })}
             {departments.length === 0 && (
               <tr>
                 <td colSpan={uniqueProducts.length + 1} style={{ textAlign: 'center', padding: '2rem' }}>ไม่มีรายการจัดส่ง</td>
