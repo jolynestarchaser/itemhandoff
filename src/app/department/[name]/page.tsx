@@ -130,7 +130,9 @@ export default function DepartmentPage() {
     const productName = finalProductName || 'Unknown Product';
     const qrData = `${productName} ${productId}`;
     
-    handleScanSuccess(qrData, productName, productId);
+    await processScan(qrData, productName, productId);
+    
+    setShowManualEntry(false);
     setManualCode('');
     setSelectedProduct('');
     setCustomProduct('');
