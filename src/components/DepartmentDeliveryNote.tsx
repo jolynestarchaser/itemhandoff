@@ -72,6 +72,7 @@ export default function DepartmentDeliveryNote({ department, records }: Departme
         <div className="signature-box">
           <div className="signature-title">ผู้รับสินค้า</div>
           <div>{department}</div>
+          <br></br>
           <div style={{ marginTop: '1rem' }}>ลายมือชื่อ</div>
           <div className="signature-line"></div>
           <div>ชื่อ</div>
@@ -81,7 +82,7 @@ export default function DepartmentDeliveryNote({ department, records }: Departme
         </div>
         <div className="signature-box">
           <div className="signature-title">ผู้ส่งสินค้า</div>
-          <div>บริษัท จำกัด</div>
+          <div>บริษัท อภิลักษณ์ เฮลท์แคร์ คอร์เปอร์เรชั่น</div>
           <div style={{ marginTop: '1rem' }}>ลายมือชื่อ</div>
           <div className="signature-line"></div>
           <div>ชื่อ</div>
