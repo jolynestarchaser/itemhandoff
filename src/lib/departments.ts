@@ -40,7 +40,7 @@ export const departments = [
   { key: "MedicalWard7", nameTh: "อายุรกรรม 7", nameEn: "Medical Ward 7" },
   { key: "PrivateMedicalWard7", nameTh: "พิเศษอายุรกรรม 7", nameEn: "Private Medical Ward 7" },
   { key: "MedicalWard8", nameTh: "อายุรกรรม 8", nameEn: "Medical Ward 8" },
-  { key: "Rcui", nameTh: "RCUI", nameEn: "Respiratory Care Unit (RCU)" },
+  { key: "Rcu", nameTh: "RCU", nameEn: "Respiratory Care Unit (RCU)" },
   { key: "MedicalIcu1", nameTh: "ICU อายุรกรรม 1", nameEn: "Medical ICU 1 (MICU 1)" },
   { key: "MedicalIcu2", nameTh: "ICU อายุรกรรม 2", nameEn: "Medical ICU 2 (MICU 2)" },
   { key: "StrokeUnit", nameTh: "Stroke unit", nameEn: "Stroke Unit" },
