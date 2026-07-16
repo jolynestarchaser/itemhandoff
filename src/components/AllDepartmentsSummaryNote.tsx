@@ -30,7 +30,7 @@ export default function AllDepartmentsSummaryNote({ records }: AllDepartmentsSum
   // Group records by Date
   const recordsByDate: Record<string, HandoffRecord[]> = {};
   records.forEach((r) => {
-    const dStr = formatDateStr(r.createdAt);
+    const dStr = formatDateStr(r.handoffDate || r.createdAt);
     if (!recordsByDate[dStr]) recordsByDate[dStr] = [];
     recordsByDate[dStr].push(r);
   });
@@ -110,38 +110,26 @@ export default function AllDepartmentsSummaryNote({ records }: AllDepartmentsSum
       {/* ควบคุมการแสดงผล (ซ่อนเมื่อพิมพ์) */}
       <div className="no-print mb-6 border border-white/10 rounded-xl p-4 bg-white/5">
         <h3 className="text-white font-bold mb-3">เลือกเอกสารที่ต้องการพิมพ์</h3>
-        <div className="flex flex-wrap gap-2 mb-4">
-          <button
-            onClick={() => setViewMode('all')}
-            className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
-              viewMode === 'all' 
-                ? 'bg-[#F58220] text-white' 
-                : 'bg-white/10 text-gray-300 hover:bg-white/20'
-            }`}
+        <div className="flex items-center gap-4 mb-4">
+          <select
+            value={viewMode}
+            onChange={(e) => setViewMode(e.target.value)}
+            className="w-full bg-black/50 border border-white/20 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[#F58220] appearance-none"
           >
-            รวมทั้งหมด (ยอดสะสม)
-          </button>
-          
-          {uniqueDates.map(dateStr => {
-            const displayDate = new Date(dateStr).toLocaleDateString('th-TH', {
-              year: 'numeric',
-              month: 'short',
-              day: 'numeric',
-            });
-            return (
-              <button
-                key={dateStr}
-                onClick={() => setViewMode(dateStr)}
-                className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
-                  viewMode === dateStr 
-                    ? 'bg-[#F58220] text-white' 
-                    : 'bg-white/10 text-gray-300 hover:bg-white/20'
-                }`}
-              >
-                วันที่ {displayDate}
-              </button>
-            );
-          })}
+            <option value="all">รวมทั้งหมด (ยอดสะสม)</option>
+            {uniqueDates.map(dateStr => {
+              const displayDate = new Date(dateStr).toLocaleDateString('th-TH', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+              });
+              return (
+                <option key={dateStr} value={dateStr}>
+                  วันที่ {displayDate}
+                </option>
+              );
+            })}
+          </select>
         </div>
 
         <button

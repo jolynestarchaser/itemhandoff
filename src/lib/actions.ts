@@ -4,7 +4,7 @@ import prisma from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
 import { HandoffRecord } from '@prisma/client';
 
-export async function createHandoffRecord(data: { qrData: string; productName: string; productId: string; department: string }) {
+export async function createHandoffRecord(data: { qrData: string; productName: string; productId: string; department: string; handoffDate?: string }) {
   try {
     const record = await prisma.handoffRecord.create({
       data: {
@@ -12,6 +12,7 @@ export async function createHandoffRecord(data: { qrData: string; productName: s
         productName: data.productName,
         productId: data.productId,
         department: data.department,
+        handoffDate: data.handoffDate ? new Date(data.handoffDate) : undefined,
       },
     });
     revalidatePath('/summary');
@@ -23,7 +24,7 @@ export async function createHandoffRecord(data: { qrData: string; productName: s
   }
 }
 
-export async function createMultipleHandoffRecords(items: { qrData: string; productName: string; productId: string; department: string }[]) {
+export async function createMultipleHandoffRecords(items: { qrData: string; productName: string; productId: string; department: string; handoffDate?: string }[]) {
   try {
     const records = await prisma.$transaction(
       items.map(item => 
@@ -33,6 +34,7 @@ export async function createMultipleHandoffRecords(items: { qrData: string; prod
             productName: item.productName,
             productId: item.productId,
             department: item.department,
+            handoffDate: item.handoffDate ? new Date(item.handoffDate) : undefined,
           }
         })
       )
@@ -137,5 +139,29 @@ export async function checkProductExistsGlobal(productId: string): Promise<{ exi
   } catch (error) {
     console.error('Failed to check product globally:', error);
     return { exists: false };
+  }
+}
+
+// ค้นหา department ที่มีสินค้านี้อยู่
+export async function searchDepartmentsByProduct(query: string): Promise<string[]> {
+  try {
+    const records = await prisma.handoffRecord.findMany({
+      where: {
+        OR: [
+          { productId: { contains: query, mode: 'insensitive' } },
+          { productName: { contains: query, mode: 'insensitive' } }
+        ]
+      },
+      select: {
+        department: true
+      }
+    });
+    
+    // กรองเอาเฉพาะแผนกที่ไม่ซ้ำกัน
+    const uniqueDepartments = Array.from(new Set(records.map(r => r.department)));
+    return uniqueDepartments;
+  } catch (error) {
+    console.error('Failed to search departments by product:', error);
+    return [];
   }
 }

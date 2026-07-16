@@ -15,4 +15,5 @@ model HandoffRecord {
   productId    String   // Parsed from QR (e.g., "A001")
   department   String
   createdAt    DateTime @default(now())
+  handoffDate  DateTime @default(now())
 }

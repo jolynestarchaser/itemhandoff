@@ -54,17 +54,13 @@ export default function DepartmentPage() {
   // คำนวณจำนวนรายการของแต่ละวันที่
   const dateCounts: Record<string, number> = {};
   records.forEach(r => {
-    const dStr = formatDateStr(r.createdAt);
+    const dateToUse = r.handoffDate || r.createdAt;
+    const dStr = formatDateStr(dateToUse);
     dateCounts[dStr] = (dateCounts[dStr] || 0) + 1;
   });
 
-  const uniqueDates = Array.from(new Set(records.map(r => formatDateStr(r.createdAt)))).sort((a, b) => b.localeCompare(a));
+  const uniqueDates = Array.from(new Set(records.map(r => formatDateStr(r.handoffDate || r.createdAt)))).sort((a, b) => b.localeCompare(a));
   const todayStr = formatDateStr(new Date());
-
-  // ตรวจสอบว่าวันที่ปัจจุบันอยู่ใน uniqueDates หรือไม่ ถ้าไม่มีให้เพิ่มเข้าไปเพื่อให้เลือกได้
-  const allAvailableDates = uniqueDates.includes(todayStr) 
-    ? uniqueDates 
-    : [todayStr, ...uniqueDates].sort((a, b) => b.localeCompare(a));
   
   useEffect(() => {
     // ให้ค่าเริ่มต้นเป็นวันที่ปัจจุบันเสมอ
@@ -73,7 +69,7 @@ export default function DepartmentPage() {
     }
   }, [records, selectedDate, todayStr]);
 
-  const filteredRecords = records.filter(r => formatDateStr(r.createdAt) === selectedDate);
+  const filteredRecords = records.filter(r => formatDateStr(r.handoffDate || r.createdAt) === selectedDate);
 
   const processScan = useCallback(async (qrData: string, productName: string, productId: string, skipFetch = false) => {
     // ตรวจสอบซ้ำในระบบ (ทุกแผนก)
@@ -94,6 +90,7 @@ export default function DepartmentPage() {
       productName,
       productId,
       department,
+      handoffDate: selectedDate, // เพิ่มฟิลด์วันที่ส่งมอบ
     });
 
     if (result.success) {
@@ -239,18 +236,29 @@ export default function DepartmentPage() {
             <h1 className="text-2xl font-bold text-white">แผนก {departmentNameTh}</h1>
             <p className="text-gray-400 text-sm">จัดการรายการสินค้าที่ส่งมอบ</p>
             <div className="mt-2 flex items-center gap-2">
-              <label className="text-sm text-gray-300">วันที่:</label>
-              <select
-                value={selectedDate}
-                onChange={(e) => setSelectedDate(e.target.value)}
-                className="bg-black/50 border border-white/20 rounded-lg px-2 py-1 text-sm text-white outline-none focus:border-[#F58220]"
-              >
-                {allAvailableDates.map(date => (
-                  <option key={date} value={date}>
-                    {new Date(date).toLocaleDateString('th-TH')} ({dateCounts[date] || 0} รายการ)
-                  </option>
-                ))}
-              </select>
+              <label className="text-sm text-gray-300">วันที่ส่งมอบ:</label>
+              <div className="relative inline-flex items-center">
+                <span className="text-white text-sm bg-black/50 px-3 py-1.5 border border-white/20 rounded-lg">
+                  {selectedDate ? new Date(selectedDate).toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' }) : 'กำลังโหลด...'}
+                </span>
+                
+                {/* Icon Button overlaying invisible input */}
+                <div className="ml-2 relative w-9 h-9 flex items-center justify-center bg-[#F58220] hover:bg-[#d9721a] rounded-lg cursor-pointer overflow-hidden border border-[#F58220] transition-colors shadow-lg shadow-[#F58220]/20">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                    <line x1="16" y1="2" x2="16" y2="6"></line>
+                    <line x1="8" y1="2" x2="8" y2="6"></line>
+                    <line x1="3" y1="10" x2="21" y2="10"></line>
+                  </svg>
+                  <input
+                    type="date"
+                    value={selectedDate}
+                    onChange={(e) => setSelectedDate(e.target.value)}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                    style={{ WebkitAppearance: 'none' }}
+                  />
+                </div>
+              </div>
             </div>
             <p className="text-sm text-gray-400 mt-1">
               {loading ? 'กำลังโหลด...' : `${filteredRecords.length} รายการ (ของวันที่เลือก)`}
