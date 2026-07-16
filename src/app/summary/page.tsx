@@ -12,16 +12,24 @@ export default async function SummaryPage() {
   // ดึงข้อมูลทั้งหมดจาก Database ผ่าน Server Action
   const records = await getAllRecords();
 
-  // จัดกลุ่มตามแผนก
-  const groupedByDept: Record<string, HandoffRecord[]> = {};
+  const formatDateStr = (date: Date | string) => {
+    const d = new Date(date);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  };
+
+  // จัดกลุ่มตามวันที่ จากนั้นตามแผนก
+  const groupedByDate: Record<string, Record<string, HandoffRecord[]>> = {};
+  
   records.forEach((record) => {
-    if (!groupedByDept[record.department]) {
-      groupedByDept[record.department] = [];
+    const dStr = formatDateStr(record.createdAt);
+    if (!groupedByDate[dStr]) groupedByDate[dStr] = {};
+    if (!groupedByDate[dStr][record.department]) {
+      groupedByDate[dStr][record.department] = [];
     }
-    groupedByDept[record.department].push(record);
+    groupedByDate[dStr][record.department].push(record);
   });
 
-  const departments = Object.keys(groupedByDept).sort();
+  const uniqueDates = Object.keys(groupedByDate).sort((a, b) => b.localeCompare(a));
 
   return (
     <div className="max-w-2xl mx-auto text-white">
@@ -35,49 +43,63 @@ export default async function SummaryPage() {
           <div>
             <h1 className="text-2xl font-bold text-white">สรุปเอกสารส่งมอบทั้งหมด</h1>
             <p className="text-slate-400 text-sm">
-              {records.length} รายการ จาก {departments.length} แผนก
+              {records.length} รายการ จาก {uniqueDates.length} วัน
             </p>
           </div>
           <ExportButton records={records} />
         </div>
 
-        {/* ตารางแสดงข้อมูลแบ่งตามแผนก */}
-        {departments.length > 0 ? (
-          departments.map((dept) => {
-            const thaiName = deptDict.find(d => d.key === dept)?.nameTh || dept;
+        {/* ตารางแสดงข้อมูลแบ่งตามวันที่และแผนก */}
+        {uniqueDates.length > 0 ? (
+          uniqueDates.map((dateStr) => {
+            const displayDate = new Date(dateStr).toLocaleDateString('th-TH', {
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric',
+            });
+            const deptGroup = groupedByDate[dateStr];
+            const departments = Object.keys(deptGroup).sort();
+            
             return (
-            <div key={dept} className="mb-6">
-              <div className="flex items-center gap-3 mb-3">
-                <h2 className="text-lg font-bold text-white">แผนก {thaiName}</h2>
-                <span className="text-xs bg-[#F58220]/20 text-[#F58220] px-2 py-1 rounded-full font-semibold">
-                  {groupedByDept[dept].length} รายการ
-                </span>
+              <div key={dateStr} className="mb-8 border border-white/10 rounded-xl p-4 bg-white/5">
+                <h2 className="text-xl font-bold text-white mb-4 border-b border-white/10 pb-2">
+                  ประจำวันที่ {displayDate}
+                </h2>
+                
+                {departments.map((dept) => {
+                  const thaiName = deptDict.find(d => d.key === dept)?.nameTh || dept;
+                  return (
+                    <div key={dept} className="mb-6 last:mb-0">
+                      <div className="flex items-center gap-3 mb-3">
+                        <h3 className="text-md font-bold text-gray-200">แผนก {thaiName}</h3>
+                        <span className="text-xs bg-[#F58220]/20 text-[#F58220] px-2 py-1 rounded-full font-semibold">
+                          {deptGroup[dept].length} รายการ
+                        </span>
+                      </div>
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left text-sm text-[#A0A0A0]">
+                          <thead className="text-xs uppercase bg-[#121212] border-b border-[#333333]">
+                            <tr>
+                              <th className="px-4 py-3 rounded-tl-lg w-8">#</th>
+                              <th className="px-4 py-3">ชื่อสินค้า</th>
+                              <th className="px-4 py-3 rounded-tr-lg">รหัสสินค้า</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {deptGroup[dept].map((record: HandoffRecord, index: number) => (
+                              <tr key={record.id} className="border-b border-[#333333] hover:bg-[rgba(255,255,255,0.02)] transition-colors">
+                                <td className="px-4 py-3 text-center">{index + 1}</td>
+                                <td className="px-4 py-3 font-medium text-[#FFFFFF]">{record.productName}</td>
+                                <td className="px-4 py-3 font-mono">{record.productId}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-sm text-[#A0A0A0] mb-2">
-                  <thead className="text-xs uppercase bg-[#121212] border-b border-[#333333]">
-                    <tr>
-                      <th className="px-4 py-3 rounded-tl-lg w-8">#</th>
-                      <th className="px-4 py-3">ชื่อสินค้า</th>
-                      <th className="px-4 py-3">รหัสสินค้า</th>
-                      <th className="px-4 py-3 rounded-tr-lg">วันที่</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {groupedByDept[dept].map((record: HandoffRecord, index: number) => (
-                      <tr key={record.id} className="border-b border-[#333333] hover:bg-[rgba(255,255,255,0.02)] transition-colors">
-                        <td className="px-4 py-3 text-center">{index + 1}</td>
-                        <td className="px-4 py-3 font-medium text-[#FFFFFF]">{record.productName}</td>
-                        <td className="px-4 py-3 font-mono">{record.productId}</td>
-                        <td className="px-4 py-3 whitespace-nowrap">
-                          {new Date(record.createdAt).toLocaleDateString('th-TH', { day: '2-digit', month: '2-digit', year: '2-digit' })}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
             );
           })
         ) : (

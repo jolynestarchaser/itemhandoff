@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { HandoffRecord } from '@prisma/client';
 import { departments as deptDict } from '@/lib/departments';
 
@@ -8,6 +9,8 @@ interface AllDepartmentsSummaryNoteProps {
 }
 
 export default function AllDepartmentsSummaryNote({ records }: AllDepartmentsSummaryNoteProps) {
+  const [viewMode, setViewMode] = useState<string>('all'); // 'all' หรือ 'YYYY-MM-DD'
+
   const handlePrint = () => {
     window.print();
   };
@@ -19,44 +22,20 @@ export default function AllDepartmentsSummaryNote({ records }: AllDepartmentsSum
     { label: 'C', name: 'รถเข็นคอมพิวเตอร์ All-in-one พร้อมลิ้นชักจัดเก็บยา ๒๐ ช่อง (Drug Administration Cart)', shortName: 'APIX Flow C' },
   ];
 
-  // รวบรวม departments ที่ไม่ซ้ำ
-  const departmentSet = new Set<string>();
-  records.forEach((r) => departmentSet.add(r.department));
-  const departments = Array.from(departmentSet).sort();
+  const formatDateStr = (date: Date | string) => {
+    const d = new Date(date);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  };
 
-  // สร้าง cross-reference matrix: dept → label → count
-  const matrix: Record<string, Record<string, number>> = {};
-  departments.forEach((dept) => {
-    matrix[dept] = {};
-    uniqueProducts.forEach((p) => {
-      matrix[dept][p.label] = 0;
-    });
-  });
-
+  // Group records by Date
+  const recordsByDate: Record<string, HandoffRecord[]> = {};
   records.forEach((r) => {
-    // แปลงชื่อเป็นตัวพิมพ์เล็กและตัดช่องว่างออกเพื่อการเปรียบเทียบที่แม่นยำขึ้น
-    const dbName = r.productName.toLowerCase().replace(/\s+/g, '');
-
-    // จับคู่ productName จาก DB กับรายการสินค้าที่กำหนดไว้
-    const matchedProduct = uniqueProducts.find(p => {
-      const nameL = p.name.toLowerCase().replace(/\s+/g, '');
-      const shortL = p.shortName.toLowerCase().replace(/\s+/g, '');
-      return nameL === dbName || shortL === dbName || dbName.includes(shortL) || shortL.includes(dbName);
-    });
-
-    if (matchedProduct && matrix[r.department]) {
-      matrix[r.department][matchedProduct.label]++;
-    }
+    const dStr = formatDateStr(r.createdAt);
+    if (!recordsByDate[dStr]) recordsByDate[dStr] = [];
+    recordsByDate[dStr].push(r);
   });
 
-  // คำนวณผลรวมต่อ product
-  const totals: Record<string, number> = {};
-  uniqueProducts.forEach((p) => {
-    totals[p.label] = 0;
-    departments.forEach((dept) => {
-      totals[p.label] += matrix[dept][p.label];
-    });
-  });
+  const uniqueDates = Object.keys(recordsByDate).sort((a, b) => b.localeCompare(a)); // Descending
 
   return (
     <div>
@@ -84,6 +63,9 @@ export default function AllDepartmentsSummaryNote({ records }: AllDepartmentsSum
             padding: 0;
             margin-bottom: 0;
             box-shadow: none;
+          }
+          .page-break {
+            page-break-after: always;
           }
         }
         .document-style h1 {
@@ -125,78 +107,262 @@ export default function AllDepartmentsSummaryNote({ records }: AllDepartmentsSum
         }
       `}} />
 
-      {/* ปุ่มพิมพ์ (ซ่อนเมื่อพิมพ์) */}
-      <div className="no-print mb-4">
+      {/* ควบคุมการแสดงผล (ซ่อนเมื่อพิมพ์) */}
+      <div className="no-print mb-6 border border-white/10 rounded-xl p-4 bg-white/5">
+        <h3 className="text-white font-bold mb-3">เลือกเอกสารที่ต้องการพิมพ์</h3>
+        <div className="flex flex-wrap gap-2 mb-4">
+          <button
+            onClick={() => setViewMode('all')}
+            className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
+              viewMode === 'all' 
+                ? 'bg-[#F58220] text-white' 
+                : 'bg-white/10 text-gray-300 hover:bg-white/20'
+            }`}
+          >
+            รวมทั้งหมด (ยอดสะสม)
+          </button>
+          
+          {uniqueDates.map(dateStr => {
+            const displayDate = new Date(dateStr).toLocaleDateString('th-TH', {
+              year: 'numeric',
+              month: 'short',
+              day: 'numeric',
+            });
+            return (
+              <button
+                key={dateStr}
+                onClick={() => setViewMode(dateStr)}
+                className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
+                  viewMode === dateStr 
+                    ? 'bg-[#F58220] text-white' 
+                    : 'bg-white/10 text-gray-300 hover:bg-white/20'
+                }`}
+              >
+                วันที่ {displayDate}
+              </button>
+            );
+          })}
+        </div>
+
         <button
           onClick={handlePrint}
-          className="w-full py-3 bg-[#F58220] hover:bg-[#d9721a] text-white font-semibold rounded-xl transition-all flex items-center justify-center gap-2"
+          disabled={uniqueDates.length === 0}
+          className="w-full py-3 bg-[#F58220] hover:bg-[#d9721a] disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold rounded-xl transition-all flex items-center justify-center gap-2"
         >
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="6 9 6 2 18 2 18 9" /><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" /><rect width="12" height="8" x="6" y="14" />
           </svg>
-          พิมพ์เอกสารสรุปทั้งหมด
+          {viewMode === 'all' ? 'พิมพ์ใบสรุปรวมสะสมทั้งหมด' : 'พิมพ์ใบสรุปเฉพาะวันที่เลือก'}
         </button>
       </div>
 
-      <div className="document-style">
-        <h1>ใบสรุปรายการส่งมอบ</h1>
-        <p className="contract-no">เลขที่สัญญา ...........................................................</p>
-        
-        <table>
-          <thead>
-            <tr>
-              <th>ชื่อแผนก</th>
-              {uniqueProducts.map((p) => (
-                <th key={p.label} style={{ textAlign: 'center' }}>
-                  {p.label}<br />
-                  <span style={{ fontSize: '0.8em', fontWeight: 'normal' }}>({p.shortName})</span>
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {departments.map((dept) => {
-              const thaiName = deptDict.find(d => d.key === dept)?.nameTh || dept;
+      <div className="print-only-wrapper">
+        {uniqueDates.length === 0 ? (
+          <div className="document-style">
+            <h1>ใบสรุปรายการส่งมอบ</h1>
+            <p className="contract-no">ไม่มีรายการจัดส่ง</p>
+          </div>
+        ) : (
+          <>
+            {/* 1. Grand Total Block (รวมทั้งหมดทุกวัน) */}
+            {viewMode === 'all' && (() => {
+              const allDepartmentsSet = new Set<string>();
+              records.forEach((r) => allDepartmentsSet.add(r.department));
+              const allDepartments = Array.from(allDepartmentsSet).sort();
+
+              const allMatrix: Record<string, Record<string, number>> = {};
+              allDepartments.forEach((dept) => {
+                allMatrix[dept] = {};
+                uniqueProducts.forEach((p) => {
+                  allMatrix[dept][p.label] = 0;
+                });
+              });
+
+              records.forEach((r) => {
+                const dbName = r.productName.toLowerCase().replace(/\s+/g, '');
+                const matchedProduct = uniqueProducts.find(p => {
+                  const nameL = p.name.toLowerCase().replace(/\s+/g, '');
+                  const shortL = p.shortName.toLowerCase().replace(/\s+/g, '');
+                  return nameL === dbName || shortL === dbName || dbName.includes(shortL) || shortL.includes(dbName);
+                });
+                if (matchedProduct && allMatrix[r.department]) {
+                  allMatrix[r.department][matchedProduct.label]++;
+                }
+              });
+
+              const allTotals: Record<string, number> = {};
+              uniqueProducts.forEach((p) => {
+                allTotals[p.label] = 0;
+                allDepartments.forEach((dept) => {
+                  allTotals[p.label] += allMatrix[dept][p.label];
+                });
+              });
+
               return (
-                <tr key={dept}>
-                  <td>{thaiName}</td>
-                  {uniqueProducts.map((p) => (
-                    <td key={p.label} style={{ textAlign: 'center' }}>
-                      {matrix[dept][p.label] > 0 ? matrix[dept][p.label] : '-'}
-                    </td>
-                  ))}
-                </tr>
+                <div className="document-style">
+                  <h1>ใบสรุปรายการส่งมอบ<br/>(รวมยอดสะสมทั้งหมด)</h1>
+                  <p className="contract-no">เลขที่สัญญา ...........................................................</p>
+                  
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>ชื่อแผนก</th>
+                        {uniqueProducts.map((p) => (
+                          <th key={p.label} style={{ textAlign: 'center' }}>
+                            {p.label}<br />
+                            <span style={{ fontSize: '0.8em', fontWeight: 'normal' }}>({p.shortName})</span>
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {allDepartments.map((dept) => {
+                        const thaiName = deptDict.find(d => d.key === dept)?.nameTh || dept;
+                        return (
+                          <tr key={dept}>
+                            <td>{thaiName}</td>
+                            {uniqueProducts.map((p) => (
+                              <td key={p.label} style={{ textAlign: 'center' }}>
+                                {allMatrix[dept][p.label] > 0 ? allMatrix[dept][p.label] : '-'}
+                              </td>
+                            ))}
+                          </tr>
+                        );
+                      })}
+                      {allDepartments.length > 0 && (
+                        <tr>
+                          <td style={{ fontWeight: 'bold', textAlign: 'right' }}>รวมทั้งหมด</td>
+                          {uniqueProducts.map((p) => (
+                            <td key={p.label} style={{ textAlign: 'center', fontWeight: 'bold' }}>
+                              {allTotals[p.label] > 0 ? allTotals[p.label] : '-'}
+                            </td>
+                          ))}
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                  
+                  <div className="legend-area">
+                    <strong>คำอธิบายรายละเอียดสินค้ารายการ </strong>
+                    <ul>
+                      {uniqueProducts.map((p) => (
+                        <li key={p.label}>
+                          <strong>{p.label} </strong> {p.name}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* 2. Daily Blocks (แยกตามวัน) */}
+            {uniqueDates
+              .filter(dateStr => viewMode === 'all' ? false : viewMode === dateStr)
+              .map((dateStr) => {
+              const dateRecords = recordsByDate[dateStr];
+              
+              // รวบรวม departments ที่ไม่ซ้ำของวันนี้
+              const departmentSet = new Set<string>();
+              dateRecords.forEach((r) => departmentSet.add(r.department));
+              const departments = Array.from(departmentSet).sort();
+  
+              // สร้าง cross-reference matrix: dept → label → count
+              const matrix: Record<string, Record<string, number>> = {};
+              departments.forEach((dept) => {
+                matrix[dept] = {};
+                uniqueProducts.forEach((p) => {
+                  matrix[dept][p.label] = 0;
+                });
+              });
+  
+              dateRecords.forEach((r) => {
+                const dbName = r.productName.toLowerCase().replace(/\s+/g, '');
+                const matchedProduct = uniqueProducts.find(p => {
+                  const nameL = p.name.toLowerCase().replace(/\s+/g, '');
+                  const shortL = p.shortName.toLowerCase().replace(/\s+/g, '');
+                  return nameL === dbName || shortL === dbName || dbName.includes(shortL) || shortL.includes(dbName);
+                });
+                if (matchedProduct && matrix[r.department]) {
+                  matrix[r.department][matchedProduct.label]++;
+                }
+              });
+  
+              // คำนวณผลรวมต่อ product สำหรับวันนี้
+              const totals: Record<string, number> = {};
+              uniqueProducts.forEach((p) => {
+                totals[p.label] = 0;
+                departments.forEach((dept) => {
+                  totals[p.label] += matrix[dept][p.label];
+                });
+              });
+  
+              const displayDate = new Date(dateStr).toLocaleDateString('th-TH', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+              });
+  
+              return (
+                <div key={dateStr} className="document-style">
+                  <h1>ใบสรุปรายการส่งมอบ<br/>ประจำวันที่ {displayDate}</h1>
+                  <p className="contract-no">เลขที่สัญญา ...........................................................</p>
+                  
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>ชื่อแผนก</th>
+                        {uniqueProducts.map((p) => (
+                          <th key={p.label} style={{ textAlign: 'center' }}>
+                            {p.label}<br />
+                            <span style={{ fontSize: '0.8em', fontWeight: 'normal' }}>({p.shortName})</span>
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {departments.map((dept) => {
+                        const thaiName = deptDict.find(d => d.key === dept)?.nameTh || dept;
+                        return (
+                          <tr key={dept}>
+                            <td>{thaiName}</td>
+                            {uniqueProducts.map((p) => (
+                              <td key={p.label} style={{ textAlign: 'center' }}>
+                                {matrix[dept][p.label] > 0 ? matrix[dept][p.label] : '-'}
+                              </td>
+                            ))}
+                          </tr>
+                        );
+                      })}
+                      {/* Totals row */}
+                      {departments.length > 0 && (
+                        <tr>
+                          <td style={{ fontWeight: 'bold', textAlign: 'right' }}>รวมทั้งหมด</td>
+                          {uniqueProducts.map((p) => (
+                            <td key={p.label} style={{ textAlign: 'center', fontWeight: 'bold' }}>
+                              {totals[p.label] > 0 ? totals[p.label] : '-'}
+                            </td>
+                          ))}
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                  
+                  <div className="legend-area">
+                    <strong>คำอธิบายรายละเอียดสินค้ารายการ </strong>
+                    <ul>
+                      {uniqueProducts.map((p) => (
+                        <li key={p.label}>
+                          <strong>{p.label} </strong> {p.name}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
               );
             })}
-            {departments.length === 0 && (
-              <tr>
-                <td colSpan={uniqueProducts.length + 1} style={{ textAlign: 'center', padding: '2rem' }}>ไม่มีรายการจัดส่ง</td>
-              </tr>
-            )}
-            {/* Totals row */}
-            {departments.length > 0 && (
-              <tr>
-                <td style={{ fontWeight: 'bold', textAlign: 'right' }}>รวมทั้งหมด</td>
-                {uniqueProducts.map((p) => (
-                  <td key={p.label} style={{ textAlign: 'center', fontWeight: 'bold' }}>
-                    {totals[p.label] > 0 ? totals[p.label] : '-'}
-                  </td>
-                ))}
-              </tr>
-            )}
-          </tbody>
-        </table>
-        
-        <div className="legend-area">
-          <strong>คำอธิบายรายละเอียดสินค้ารายการ </strong>
-          <ul>
-            {uniqueProducts.map((p) => (
-              <li key={p.label}>
-                <strong>{p.label} </strong> {p.name}
-              </li>
-            ))}
-          </ul>
-        </div>
+          </>
+        )}
       </div>
     </div>
   );

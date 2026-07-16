@@ -5,14 +5,16 @@ import { HandoffRecord } from '@prisma/client';
 interface DepartmentDeliveryNoteProps {
   department: string;
   records: HandoffRecord[];
+  date?: string; // YYYY-MM-DD
 }
 
-export default function DepartmentDeliveryNote({ department, records }: DepartmentDeliveryNoteProps) {
+export default function DepartmentDeliveryNote({ department, records, date }: DepartmentDeliveryNoteProps) {
   const handlePrint = () => {
     window.print();
   };
 
-  const formattedDate = new Date().toLocaleDateString('th-TH', {
+  const displayDate = date ? new Date(date) : new Date();
+  const formattedDate = displayDate.toLocaleDateString('th-TH', {
     year: 'numeric',
     month: 'long',
     day: 'numeric',

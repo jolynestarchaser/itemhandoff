@@ -23,12 +23,21 @@ export default function DepartmentPage() {
   const [manualCode, setManualCode] = useState('');
   const [selectedProduct, setSelectedProduct] = useState('');
   const [customProduct, setCustomProduct] = useState('');
+  const [manualItems, setManualItems] = useState<{productName: string; productId: string}[]>([]); // สำหรับ batch
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<HandoffRecord | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [duplicateInfo, setDuplicateInfo] = useState<{ department: string; createdAt: Date } | null>(null);
   const [successMsg, setSuccessMsg] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<string>(''); // YYYY-MM-DD
+
+  // Helper สำหรับดึงวันที่แบบ YYYY-MM-DD
+  const formatDateStr = (date: Date | string) => {
+    const d = new Date(date);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  };
 
   // ดึงข้อมูลจาก DB
   const fetchRecords = useCallback(async () => {
@@ -42,7 +51,20 @@ export default function DepartmentPage() {
     fetchRecords();
   }, [fetchRecords]);
 
-  const processScan = useCallback(async (qrData: string, productName: string, productId: string) => {
+  // ประมวลผลวันที่เพื่อสร้างตัวเลือก
+  const uniqueDates = Array.from(new Set(records.map(r => formatDateStr(r.createdAt)))).sort((a, b) => b.localeCompare(a));
+  
+  useEffect(() => {
+    if (uniqueDates.length > 0 && !selectedDate) {
+      setSelectedDate(uniqueDates[0]);
+    } else if (uniqueDates.length === 0 && !selectedDate) {
+      setSelectedDate(formatDateStr(new Date()));
+    }
+  }, [uniqueDates, selectedDate]);
+
+  const filteredRecords = records.filter(r => formatDateStr(r.createdAt) === selectedDate);
+
+  const processScan = useCallback(async (qrData: string, productName: string, productId: string, skipFetch = false) => {
     // ตรวจสอบซ้ำในระบบ (ทุกแผนก)
     const check = await checkProductExistsGlobal(productId);
 
@@ -52,7 +74,7 @@ export default function DepartmentPage() {
         department: check.department!,
         createdAt: check.createdAt!,
       });
-      return;
+      return false;
     }
 
     // ไม่ซ้ำ → บันทึกลง DB
@@ -65,9 +87,11 @@ export default function DepartmentPage() {
 
     if (result.success) {
       setSuccessMsg(`เพิ่ม "${productName}" (${productId}) สำเร็จ`);
-      fetchRecords();
+      if (!skipFetch) fetchRecords();
+      return true;
     } else {
       setErrorMsg(result.error || 'ไม่สามารถบันทึกข้อมูลได้');
+      return false;
     }
   }, [department, fetchRecords]);
 
@@ -115,27 +139,49 @@ export default function DepartmentPage() {
     return '';
   };
 
-  const handleManualSubmit = async (e: React.FormEvent) => {
+  const handleAddManualItem = (e: React.FormEvent) => {
     e.preventDefault();
     if (!manualCode.trim() || !selectedProduct) return;
     
     const prefix = getPrefix();
     const rawProductId = manualCode.trim();
-    // ถ้ามี prefix อยู่แล้วในสิ่งที่ user พิมพ์มา (เผื่อหลุดมา) ให้ตัดออกก่อนแล้วค่อยต่อใหม่
-    // แต่ด้วย UI ที่บังคับกรอกเฉพาะตัวเลข โอกาสเกิดจะน้อยลง
     const numericPart = prefix ? rawProductId.replace(/\D/g, '').padStart(3, '0') : rawProductId;
     const productId = prefix ? prefix + numericPart : rawProductId;
     
     const finalProductName = selectedProduct === 'อื่นๆ' ? customProduct.trim() : selectedProduct;
     const productName = finalProductName || 'Unknown Product';
-    const qrData = `${productName} ${productId}`;
     
-    await processScan(qrData, productName, productId);
+    if (manualItems.some(item => item.productId === productId)) {
+      setErrorMsg(`รหัส ${productId} ถูกเพิ่มในคิวแล้ว`);
+      return;
+    }
     
-    setShowManualEntry(false);
+    setManualItems([...manualItems, { productName, productId }]);
     setManualCode('');
-    setSelectedProduct('');
-    setCustomProduct('');
+    setErrorMsg('');
+  };
+
+  const handleManualSubmitAll = async () => {
+    if (manualItems.length === 0) return;
+    setIsSubmitting(true);
+    setSuccessMsg('');
+    setErrorMsg('');
+    
+    let successCount = 0;
+    for (const item of manualItems) {
+      const qrData = `${item.productName} ${item.productId}`;
+      const ok = await processScan(qrData, item.productName, item.productId, true);
+      if (ok) successCount++;
+    }
+    
+    fetchRecords();
+    setIsSubmitting(false);
+    
+    if (successCount > 0) {
+      setSuccessMsg(`บันทึกสำเร็จ ${successCount} รายการ`);
+      setManualItems([]);
+      setShowManualEntry(false);
+    }
   };
 
   // เริ่มกระบวนการลบ
@@ -181,8 +227,24 @@ export default function DepartmentPage() {
           <div>
             <h1 className="text-2xl font-bold text-white">แผนก {departmentNameTh}</h1>
             <p className="text-gray-400 text-sm">จัดการรายการสินค้าที่ส่งมอบ</p>
+            <div className="mt-2 flex items-center gap-2">
+              <label className="text-sm text-gray-300">วันที่:</label>
+              <select
+                value={selectedDate}
+                onChange={(e) => setSelectedDate(e.target.value)}
+                className="bg-black/50 border border-white/20 rounded-lg px-2 py-1 text-sm text-white outline-none focus:border-[#F58220]"
+              >
+                {uniqueDates.length === 0 ? (
+                  <option value={selectedDate}>{selectedDate ? new Date(selectedDate).toLocaleDateString('th-TH') : ''}</option>
+                ) : (
+                  uniqueDates.map(date => (
+                    <option key={date} value={date}>{new Date(date).toLocaleDateString('th-TH')}</option>
+                  ))
+                )}
+              </select>
+            </div>
             <p className="text-sm text-gray-400 mt-1">
-              {loading ? 'กำลังโหลด...' : `${records.length} รายการ`}
+              {loading ? 'กำลังโหลด...' : `${filteredRecords.length} รายการ (ของวันที่เลือก)`}
             </p>
           </div>
 
@@ -265,8 +327,8 @@ export default function DepartmentPage() {
       {/* Manual Entry Form */}
       {showManualEntry && (
         <div className="no-print mb-6 p-6 border border-white/10 rounded-2xl bg-white/5 backdrop-blur-md">
-          <h2 className="text-xl font-bold text-white mb-4">กรอกรหัสสินค้าเอง</h2>
-          <form onSubmit={handleManualSubmit} className="space-y-4">
+          <h2 className="text-xl font-bold text-white mb-4">กรอกรหัสสินค้าทีละหลายรายการ</h2>
+          <form onSubmit={handleAddManualItem} className="space-y-4">
             <div>
               <label className="block text-sm text-gray-400 mb-1">ประเภทสินค้า</label>
               <select
@@ -322,20 +384,55 @@ export default function DepartmentPage() {
             </div>
             <div className="flex gap-3 pt-2">
               <button
-                type="button"
-                onClick={() => setShowManualEntry(false)}
-                className="flex-1 py-3 bg-white/5 hover:bg-white/10 text-white font-semibold rounded-xl transition-all"
-              >
-                ยกเลิก
-              </button>
-              <button
                 type="submit"
-                className="flex-1 py-3 bg-[#F58220] hover:bg-[#d9721a] text-white font-semibold rounded-xl transition-all"
+                className="flex-1 py-3 bg-[#F58220]/20 hover:bg-[#F58220]/30 text-[#F58220] border border-[#F58220]/50 font-semibold rounded-xl transition-all"
               >
-                บันทึก
+                + เพิ่มรายการลงคิว
               </button>
             </div>
           </form>
+
+          {/* List of items in queue */}
+          {manualItems.length > 0 && (
+            <div className="mt-6 border-t border-white/10 pt-4">
+              <h3 className="text-sm font-medium text-gray-400 mb-2">รายการที่รอคิวบันทึก ({manualItems.length})</h3>
+              <ul className="space-y-2 mb-4">
+                {manualItems.map((item, idx) => (
+                  <li key={idx} className="flex justify-between items-center bg-black/30 p-2 rounded-lg border border-white/5">
+                    <span className="text-sm text-white">{item.productName} <span className="text-gray-400">({item.productId})</span></span>
+                    <button onClick={() => setManualItems(manualItems.filter((_, i) => i !== idx))} className="text-red-400 text-xs px-2 hover:underline">ลบ</button>
+                  </li>
+                ))}
+              </ul>
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => { setShowManualEntry(false); setManualItems([]); }}
+                  className="flex-1 py-3 bg-white/5 hover:bg-white/10 text-white font-semibold rounded-xl transition-all"
+                >
+                  ยกเลิก
+                </button>
+                <button
+                  onClick={handleManualSubmitAll}
+                  disabled={isSubmitting}
+                  className="flex-1 py-3 bg-[#F58220] hover:bg-[#d9721a] text-white font-semibold rounded-xl transition-all"
+                >
+                  {isSubmitting ? 'กำลังบันทึก...' : `บันทึกทั้งหมด ${manualItems.length} รายการ`}
+                </button>
+              </div>
+            </div>
+          )}
+          {manualItems.length === 0 && (
+            <div className="flex gap-3 mt-4">
+              <button
+                type="button"
+                onClick={() => setShowManualEntry(false)}
+                className="w-full py-3 bg-white/5 hover:bg-white/10 text-white font-semibold rounded-xl transition-all"
+              >
+                ยกเลิก
+              </button>
+            </div>
+          )}
         </div>
       )}
 
@@ -344,13 +441,13 @@ export default function DepartmentPage() {
         <div className="no-print space-y-2 mb-6">
           {loading ? (
             <div className="text-center py-8 text-gray-400 animate-pulse">กำลังโหลดข้อมูล...</div>
-          ) : records.length === 0 ? (
+          ) : filteredRecords.length === 0 ? (
             <div className="text-center py-12 text-gray-500 italic border border-white/5 rounded-2xl bg-white/2">
-              <p className="text-lg mb-2">ยังไม่มีสินค้าในแผนกนี้</p>
+              <p className="text-lg mb-2">ยังไม่มีสินค้าในแผนกนี้ สำหรับวันที่เลือก</p>
               <p className="text-sm">กดปุ่ม "สแกน QR" หรือ "กรอกเอง" เพื่อเพิ่มสินค้า</p>
             </div>
           ) : (
-            records.map((record) => (
+            filteredRecords.map((record) => (
               <div
                 key={record.id}
                 className="flex items-center justify-between p-4 bg-white/5 border border-white/10 rounded-xl hover:bg-white/8 transition-colors"
@@ -375,9 +472,9 @@ export default function DepartmentPage() {
       )}
 
       {/* Print delivery note section */}
-      {!showScanner && !showManualEntry && records.length > 0 && (
+      {!showScanner && !showManualEntry && filteredRecords.length > 0 && (
         <div className="bg-white rounded-xl shadow-xl overflow-hidden print-content border border-gray-200">
-          <DepartmentDeliveryNote department={departmentNameTh} records={records} />
+          <DepartmentDeliveryNote department={departmentNameTh} records={filteredRecords} date={selectedDate} />
         </div>
       )}
 

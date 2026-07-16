@@ -23,6 +23,34 @@ export async function createHandoffRecord(data: { qrData: string; productName: s
   }
 }
 
+export async function createMultipleHandoffRecords(items: { qrData: string; productName: string; productId: string; department: string }[]) {
+  try {
+    const records = await prisma.$transaction(
+      items.map(item => 
+        prisma.handoffRecord.create({
+          data: {
+            qrData: item.qrData,
+            productName: item.productName,
+            productId: item.productId,
+            department: item.department,
+          }
+        })
+      )
+    );
+    
+    // Revalidate paths once for all items
+    if (items.length > 0) {
+      revalidatePath('/summary');
+      revalidatePath(`/department/${items[0].department}`);
+    }
+    
+    return { success: true, count: records.length };
+  } catch (error) {
+    console.error('Failed to create multiple records:', error);
+    return { success: false, error: 'Failed to create records' };
+  }
+}
+
 export async function getAllRecords(): Promise<HandoffRecord[]> {
   try {
     const records = await prisma.handoffRecord.findMany({
