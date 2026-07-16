@@ -51,16 +51,27 @@ export default function DepartmentPage() {
     fetchRecords();
   }, [fetchRecords]);
 
-  // ประมวลผลวันที่เพื่อสร้างตัวเลือก
+  // คำนวณจำนวนรายการของแต่ละวันที่
+  const dateCounts: Record<string, number> = {};
+  records.forEach(r => {
+    const dStr = formatDateStr(r.createdAt);
+    dateCounts[dStr] = (dateCounts[dStr] || 0) + 1;
+  });
+
   const uniqueDates = Array.from(new Set(records.map(r => formatDateStr(r.createdAt)))).sort((a, b) => b.localeCompare(a));
+  const todayStr = formatDateStr(new Date());
+
+  // ตรวจสอบว่าวันที่ปัจจุบันอยู่ใน uniqueDates หรือไม่ ถ้าไม่มีให้เพิ่มเข้าไปเพื่อให้เลือกได้
+  const allAvailableDates = uniqueDates.includes(todayStr) 
+    ? uniqueDates 
+    : [todayStr, ...uniqueDates].sort((a, b) => b.localeCompare(a));
   
   useEffect(() => {
-    if (uniqueDates.length > 0 && !selectedDate) {
-      setSelectedDate(uniqueDates[0]);
-    } else if (uniqueDates.length === 0 && !selectedDate) {
-      setSelectedDate(formatDateStr(new Date()));
+    // ให้ค่าเริ่มต้นเป็นวันที่ปัจจุบันเสมอ
+    if (records && !selectedDate) {
+      setSelectedDate(todayStr);
     }
-  }, [uniqueDates, selectedDate]);
+  }, [records, selectedDate, todayStr]);
 
   const filteredRecords = records.filter(r => formatDateStr(r.createdAt) === selectedDate);
 
@@ -234,13 +245,11 @@ export default function DepartmentPage() {
                 onChange={(e) => setSelectedDate(e.target.value)}
                 className="bg-black/50 border border-white/20 rounded-lg px-2 py-1 text-sm text-white outline-none focus:border-[#F58220]"
               >
-                {uniqueDates.length === 0 ? (
-                  <option value={selectedDate}>{selectedDate ? new Date(selectedDate).toLocaleDateString('th-TH') : ''}</option>
-                ) : (
-                  uniqueDates.map(date => (
-                    <option key={date} value={date}>{new Date(date).toLocaleDateString('th-TH')}</option>
-                  ))
-                )}
+                {allAvailableDates.map(date => (
+                  <option key={date} value={date}>
+                    {new Date(date).toLocaleDateString('th-TH')} ({dateCounts[date] || 0} รายการ)
+                  </option>
+                ))}
               </select>
             </div>
             <p className="text-sm text-gray-400 mt-1">
