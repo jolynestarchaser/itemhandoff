@@ -1,7 +1,7 @@
 'use server';
 
 import prisma from '@/lib/prisma';
-import { revalidatePath } from 'next/cache';
+import { revalidatePath, unstable_noStore } from 'next/cache';
 import { HandoffRecord } from '@prisma/client';
 
 export async function createHandoffRecord(data: { qrData: string; productName: string; productId: string; department: string; handoffDate?: string }) {
@@ -54,6 +54,7 @@ export async function createMultipleHandoffRecords(items: { qrData: string; prod
 }
 
 export async function getAllRecords(): Promise<HandoffRecord[]> {
+  unstable_noStore();
   try {
     const records = await prisma.handoffRecord.findMany({
       orderBy: {
@@ -94,6 +95,7 @@ export async function checkProductExists(productId: string): Promise<HandoffReco
 
 // ดึง records ตามแผนก
 export async function getRecordsByDepartment(department: string): Promise<HandoffRecord[]> {
+  unstable_noStore();
   try {
     const records = await prisma.handoffRecord.findMany({
       where: { department },
