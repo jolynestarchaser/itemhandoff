@@ -18,9 +18,8 @@ export default function AllDepartmentsSummaryNote({ records }: AllDepartmentsSum
   // กำหนดรายการสินค้าหลัก (A, B, C) ตามโครงสร้าง
   const uniqueProducts = [
     { label: 'A', name: 'รถเข็นคอมพิวเตอร์แบบ Notebook Cart สำหรับใช้ในการตรวจเยี่ยมผู้ป่วยใน (Ward Rounds)', shortName: 'APIX Round A' },
-    { label: 'B', name: 'รถเข็นคอมพิวเตอร์ All-in-one สำหรับงานเจาะเลือด (Phlebotomy Computer Cart)', shortName: 'APIX RX B' },
-    { label: 'C', name: 'รถเข็นคอมพิวเตอร์ All-in-one พร้อมลิ้นชักจัดเก็บยา ๒๐ ช่อง (Drug Administration Cart)', shortName: 'APIX Flow C' },
-  ];
+    { label: 'B', name: 'รถเข็นคอมพิวเตอร์ All-in-one พร้อมลิ้นชักจัดเก็บยา ๒๐ ช่อง (Drug Administration Cart)', shortName: 'APIX RX B' },
+    { label: 'C', name: 'รถเข็นคอมพิวเตอร์ All-in-one สำหรับงานเจาะเลือด (Phlebotomy Computer Cart)', shortName: 'APIX Flow C' },  ];
 
   const formatDateStr = (date: Date | string) => {
     const d = new Date(date);
