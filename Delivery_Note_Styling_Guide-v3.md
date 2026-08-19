@@ -205,8 +205,8 @@
     <strong>คำอธิบายรายละเอียดสินค้ารายการ A, B, C:</strong><br>
     <ul style="padding-left: 1.5rem;">
       <li><strong>A (APIX Round A):</strong> รถเข็นคอมพิวเตอร์แบบ Notebook Cart สำหรับใช้ในการตรวจเยี่ยมผู้ป่วยใน (Ward Rounds)</li>
-      <li><strong>B (APIX RX B):</strong> รถเข็นคอมพิวเตอร์ All-in-one สำหรับงานเจาะเลือด (Phlebotomy Computer Cart)</li>
-      <li><strong>C (APIX Flow C):</strong> รถเข็นคอมพิวเตอร์ All-in-one พร้อมลิ้นชักจัดเก็บยา ๒๐ ช่อง (Drug Administration Cart)</li>
+      <li><strong>B (APIX RX B):</strong> รถเข็นคอมพิวเตอร์ All-in-one พร้อมลิ้นชักจัดเก็บยา ๒๐ ช่อง (Drug Administration Cart)</li>
+      <li><strong>C (APIX Flow C):</strong> รถเข็นคอมพิวเตอร์ All-in-one สำหรับงานเจาะเลือด (Phlebotomy Computer Cart)</li>
     </ul>
   </div>
 </div>

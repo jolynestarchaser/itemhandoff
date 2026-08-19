@@ -522,9 +522,9 @@ export default function DepartmentPage() {
               </label>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 {[
-                  { id: 'APIX Round A', code: 'A', name: 'APIX Round A', desc: 'ตรวจเยี่ยมผู้ป่วยใน', color: 'border-blue-500/50 bg-blue-500/10 text-blue-300' },
-                  { id: 'APIX RX B', code: 'B', name: 'APIX RX B', desc: 'สำหรับงานเจาะเลือด', color: 'border-emerald-500/50 bg-emerald-500/10 text-emerald-300' },
-                  { id: 'APIX Flow C', code: 'C', name: 'APIX Flow C', desc: 'ลิ้นชักจัดเก็บยา 20 ช่อง', color: 'border-purple-500/50 bg-purple-500/10 text-purple-300' },
+                  { id: 'APIX Round A', code: 'A', name: 'APIX Round A', desc: 'ตรวจเยี่ยมผู้ป่วยใน (Ward Rounds)', color: 'border-blue-500/50 bg-blue-500/10 text-blue-300' },
+                  { id: 'APIX RX B', code: 'B', name: 'APIX RX B', desc: 'ลิ้นชักจัดเก็บยา 20 ช่อง', color: 'border-emerald-500/50 bg-emerald-500/10 text-emerald-300' },
+                  { id: 'APIX Flow C', code: 'C', name: 'APIX Flow C', desc: 'งานเจาะเลือด / Treatment', color: 'border-purple-500/50 bg-purple-500/10 text-purple-300' },
                   { id: 'อื่นๆ', code: '?', name: 'อื่นๆ', desc: 'ระบุชื่อเอง', color: 'border-gray-500/50 bg-gray-500/10 text-gray-300' },
                 ].map((item) => {
                   const isSelected = selectedProduct === item.id;

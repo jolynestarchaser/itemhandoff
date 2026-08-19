@@ -114,13 +114,13 @@
             </tr>
             <tr>
                 <td class="text-center">2</td>
-                <td>รถเข็นคอมพิวเตอร์ All-in-one สำหรับงานเจาะเลือด (Phlebotomy Computer Cart)</td>
+                <td>รถเข็นคอมพิวเตอร์ All-in-one พร้อมลิ้นชักจัดเก็บยา ๒๐ ช่อง (Drug Administration Cart)</td>
                 <td class="text-center">B</td>
                 <td class="text-center">200</td>
             </tr>
             <tr>
                 <td class="text-center">3</td>
-                <td>รถเข็นคอมพิวเตอร์ All-in-one พร้อมลิ้นชักจัดเก็บยา ๒๐ ช่อง (Drug Administration Cart)</td>
+                <td>รถเข็นคอมพิวเตอร์ All-in-one สำหรับงานเจาะเลือด (Phlebotomy Computer Cart)</td>
                 <td class="text-center">C</td>
                 <td class="text-center">100</td>
             </tr>
@@ -153,12 +153,12 @@
             </tr>
             <tr>
                 <td class="text-center">2</td>
-                <td>รถเข็นคอมพิวเตอร์ All-in-one สำหรับงานเจาะเลือด (Phlebotomy Computer Cart)</td>
+                <td>รถเข็นคอมพิวเตอร์ All-in-one พร้อมลิ้นชักจัดเก็บยา ๒๐ ช่อง (Drug Administration Cart)</td>
                 <td></td>
             </tr>
             <tr>
                 <td class="text-center">3</td>
-                <td>รถเข็นคอมพิวเตอร์ All-in-one พร้อมลิ้นชักจัดเก็บยา ๒๐ ช่อง (Drug Administration Cart)</td>
+                <td>รถเข็นคอมพิวเตอร์ All-in-one สำหรับงานเจาะเลือด (Phlebotomy Computer Cart)</td>
                 <td></td>
             </tr>
         </tbody>
