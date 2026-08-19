@@ -582,6 +582,7 @@ export default function DepartmentPage() {
                   )}
                   <input
                     type="text"
+                    aria-label="ระบุหมายเลข หรือ Serial Number"
                     value={manualCodeInput}
                     onChange={(e) => setManualCodeInput(e.target.value)}
                     className="w-full bg-transparent px-3 py-3 text-sm text-white focus:outline-none font-mono placeholder:text-gray-500"
@@ -594,6 +595,7 @@ export default function DepartmentPage() {
                   />
                   <button
                     type="submit"
+                    aria-label="เพิ่มลงคิว"
                     className="px-4 bg-[#F58220] hover:bg-[#d9721a] text-white text-xs font-bold transition-all flex items-center gap-1 flex-shrink-0"
                   >
                     <span>+ เพิ่มลงคิว</span>
@@ -612,6 +614,7 @@ export default function DepartmentPage() {
                   <button
                     type="button"
                     onClick={() => setManualItems([])}
+                    aria-label="ล้างคิวทั้งหมด"
                     className="text-[11px] text-red-400 hover:underline"
                   >
                     ล้างคิวทั้งหมด
@@ -628,6 +631,7 @@ export default function DepartmentPage() {
                       <button
                         type="button"
                         onClick={() => setManualItems(manualItems.filter((_, i) => i !== idx))}
+                        aria-label={`นำรหัส ${item.productId} ออกจากคิว`}
                         className="text-gray-400 hover:text-red-400 ml-1"
                         title="นำออกจากคิว"
                       >
@@ -641,6 +645,7 @@ export default function DepartmentPage() {
                   <button
                     type="button"
                     onClick={() => setActiveTab('items')}
+                    aria-label="กลับไปหน้ารายการ"
                     className="px-4 py-2.5 bg-white/5 hover:bg-white/10 text-gray-300 text-xs font-semibold rounded-xl"
                   >
                     กลับไปหน้ารายการ
@@ -649,6 +654,7 @@ export default function DepartmentPage() {
                     type="button"
                     onClick={handleSubmitQueue}
                     disabled={isSubmitting}
+                    aria-label={`บันทึกส่งมอบทั้งหมด ${manualItems.length} รายการ`}
                     className="flex-1 py-2.5 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-white text-xs sm:text-sm font-bold rounded-xl transition-all shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2"
                   >
                     {isSubmitting ? (
@@ -680,7 +686,9 @@ export default function DepartmentPage() {
                 <p className="text-xs text-gray-400">สแกน QR ติดตัวรถเพื่อบันทึกส่งมอบ</p>
               </div>
               <button
+                type="button"
                 onClick={() => setActiveTab('items')}
+                aria-label="ปิดกล้อง"
                 className="text-xs text-gray-400 hover:text-white px-2 py-1 bg-white/5 rounded-lg"
               >
                 ปิดกล้อง
@@ -699,6 +707,7 @@ export default function DepartmentPage() {
               <div className="relative w-full sm:w-72">
                 <input
                   type="text"
+                  aria-label="ค้นหารหัสรถในแผนกนี้"
                   value={searchItemQuery}
                   onChange={(e) => setSearchItemQuery(e.target.value)}
                   placeholder="ค้นหารหัสรถในแผนกนี้ (เช่น A073)..."
@@ -706,7 +715,14 @@ export default function DepartmentPage() {
                 />
                 <span className="absolute left-2.5 top-2.5 text-xs text-gray-400">🔍</span>
                 {searchItemQuery && (
-                  <button onClick={() => setSearchItemQuery('')} className="absolute right-2.5 top-2 text-xs text-gray-400 hover:text-white">✕</button>
+                  <button
+                    type="button"
+                    onClick={() => setSearchItemQuery('')}
+                    aria-label="ล้างการค้นหา"
+                    className="absolute right-2.5 top-2 text-xs text-gray-400 hover:text-white"
+                  >
+                    ✕
+                  </button>
                 )}
               </div>
 

@@ -178,7 +178,9 @@ export default function PendingVehiclesPage() {
 
           <div className="flex items-center gap-2">
             <button
+              type="button"
               onClick={() => setShowTargetModal(true)}
+              aria-label="ตั้งค่าเป้าหมายจำนวนรถ"
               className="px-3.5 py-2 bg-white/5 hover:bg-white/10 border border-white/10 text-gray-300 hover:text-white rounded-xl text-xs font-medium transition-all flex items-center gap-2"
               title="ตั้งค่าเป้าหมายจำนวนรถ (Target Fleet)"
             >
@@ -186,7 +188,9 @@ export default function PendingVehiclesPage() {
               ตั้งค่าเป้าหมาย ({targetA + targetB + targetC} คัน)
             </button>
             <button
+              type="button"
               onClick={() => handleCopyPending(typeFilter === 'all' ? 'all' : typeFilter)}
+              aria-label="คัดลอกเลขค้างส่ง"
               className="px-3.5 py-2 bg-[#F58220]/20 hover:bg-[#F58220]/30 border border-[#F58220]/40 text-[#F58220] rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5"
             >
               <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
@@ -249,7 +253,7 @@ export default function PendingVehiclesPage() {
           <div className="flex items-baseline gap-1 mt-0.5">
             <span className="text-xl font-black text-white">{data?.summary.typeA.delivered ?? 0}</span>
             <span className="text-xs text-gray-400">/{data?.summary.typeA.target ?? 200}</span>
-            <span className="text-[11px] text-orange-400 font-medium ml-auto">ค้าง {data?.summary.typeA.pending ?? 0}</span>
+            <span className="text-[11px] text-blue-400 font-medium ml-auto">ค้าง {data?.summary.typeA.pending ?? 0}</span>
           </div>
           <div className="w-full bg-white/10 rounded-full h-1 mt-2 overflow-hidden">
             <div
@@ -273,7 +277,7 @@ export default function PendingVehiclesPage() {
           <div className="flex items-baseline gap-1 mt-0.5">
             <span className="text-xl font-black text-white">{data?.summary.typeB.delivered ?? 0}</span>
             <span className="text-xs text-gray-400">/{data?.summary.typeB.target ?? 100}</span>
-            <span className="text-[11px] text-orange-400 font-medium ml-auto">ค้าง {data?.summary.typeB.pending ?? 0}</span>
+            <span className="text-[11px] text-emerald-400 font-medium ml-auto">ค้าง {data?.summary.typeB.pending ?? 0}</span>
           </div>
           <div className="w-full bg-white/10 rounded-full h-1 mt-2 overflow-hidden">
             <div
@@ -339,7 +343,9 @@ export default function PendingVehiclesPage() {
           {/* Status Tabs */}
           <div className="flex bg-black/40 p-1 rounded-xl border border-white/10">
             <button
+              type="button"
               onClick={() => setStatusFilter('pending')}
+              aria-label={`ยังไม่ส่งมอบ ${data?.summary.pendingCount ?? 0} คัน`}
               className={`flex-1 sm:flex-none px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-1.5 ${
                 statusFilter === 'pending'
                   ? 'bg-[#F58220] text-white shadow-lg shadow-[#F58220]/20'
@@ -350,7 +356,9 @@ export default function PendingVehiclesPage() {
               <span>ยังไม่ส่งมอบ ({data?.summary.pendingCount ?? 0})</span>
             </button>
             <button
+              type="button"
               onClick={() => setStatusFilter('delivered')}
+              aria-label={`ส่งมอบแล้ว ${data?.summary.deliveredCount ?? 0} คัน`}
               className={`flex-1 sm:flex-none px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-1.5 ${
                 statusFilter === 'delivered'
                   ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/20'
@@ -361,7 +369,9 @@ export default function PendingVehiclesPage() {
               <span>ส่งมอบแล้ว ({data?.summary.deliveredCount ?? 0})</span>
             </button>
             <button
+              type="button"
               onClick={() => setStatusFilter('all')}
+              aria-label={`ทั้งหมด ${data?.summary.totalFleet ?? 0} คัน`}
               className={`flex-1 sm:flex-none px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-1.5 ${
                 statusFilter === 'all'
                   ? 'bg-white/20 text-white'
@@ -375,7 +385,9 @@ export default function PendingVehiclesPage() {
           {/* Product Type Tabs */}
           <div className="flex bg-black/40 p-1 rounded-xl border border-white/10 overflow-x-auto">
             <button
+              type="button"
               onClick={() => setTypeFilter('all')}
+              aria-label="แสดงทุกประเภท"
               className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all ${
                 typeFilter === 'all' ? 'bg-white/20 text-white font-semibold' : 'text-gray-400 hover:text-white'
               }`}
@@ -383,7 +395,9 @@ export default function PendingVehiclesPage() {
               ทุกประเภท
             </button>
             <button
+              type="button"
               onClick={() => setTypeFilter('A')}
+              aria-label={`APIX Round A ค้าง ${pendingByType.A.length} คัน`}
               className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all ${
                 typeFilter === 'A' ? 'bg-blue-600 text-white font-semibold' : 'text-gray-400 hover:text-white'
               }`}
@@ -391,7 +405,9 @@ export default function PendingVehiclesPage() {
               APIX Round A ({pendingByType.A.length} ค้าง)
             </button>
             <button
+              type="button"
               onClick={() => setTypeFilter('B')}
+              aria-label={`APIX RX B ค้าง ${pendingByType.B.length} คัน`}
               className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all ${
                 typeFilter === 'B' ? 'bg-emerald-600 text-white font-semibold' : 'text-gray-400 hover:text-white'
               }`}
@@ -399,7 +415,9 @@ export default function PendingVehiclesPage() {
               APIX RX B ({pendingByType.B.length} ค้าง)
             </button>
             <button
+              type="button"
               onClick={() => setTypeFilter('C')}
+              aria-label={`APIX Flow C ค้าง ${pendingByType.C.length} คัน`}
               className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all ${
                 typeFilter === 'C' ? 'bg-purple-600 text-white font-semibold' : 'text-gray-400 hover:text-white'
               }`}
@@ -416,6 +434,7 @@ export default function PendingVehiclesPage() {
           </div>
           <input
             type="text"
+            aria-label="ค้นหารหัสรถ หรือชื่อแผนก"
             className="w-full bg-black/50 border border-white/15 rounded-xl pl-10 pr-4 py-2.5 text-sm text-white placeholder-gray-400 focus:outline-none focus:border-[#F58220] transition-colors"
             placeholder="ค้นหารหัสรถ (เช่น A001, B015, C040) หรือชื่อแผนก..."
             value={searchQuery}

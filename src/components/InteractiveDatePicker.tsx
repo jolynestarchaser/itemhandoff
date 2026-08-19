@@ -114,6 +114,8 @@ export default function InteractiveDatePicker({
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
+        aria-label="คลิกเพื่อเปิดปฏิทินเลือกวันที่"
+        aria-expanded={isOpen}
         className="w-full sm:w-auto flex items-center justify-between sm:justify-start gap-3 px-3.5 sm:px-4 py-2.5 bg-black/60 hover:bg-white/10 border border-[#F58220]/50 hover:border-[#F58220] rounded-xl text-white transition-all shadow-md shadow-black/40 group cursor-pointer"
         title="คลิกเพื่อเปิดปฏิทินเลือกวันที่"
       >
@@ -142,6 +144,7 @@ export default function InteractiveDatePicker({
       <input
         ref={nativeInputRef}
         type="date"
+        aria-label="เลือกวันที่"
         value={selectedDate}
         onChange={(e) => onDateChange(e.target.value)}
         className="sr-only"
@@ -164,6 +167,7 @@ export default function InteractiveDatePicker({
             <button
               type="button"
               onClick={handlePrevMonth}
+              aria-label="เดือนก่อนหน้า"
               className="p-2 rounded-xl hover:bg-white/10 text-gray-300 hover:text-white transition-colors"
               title="เดือนก่อนหน้า"
             >
@@ -181,6 +185,7 @@ export default function InteractiveDatePicker({
             <button
               type="button"
               onClick={handleNextMonth}
+              aria-label="เดือนถัดไป"
               className="p-2 rounded-xl hover:bg-white/10 text-gray-300 hover:text-white transition-colors"
               title="เดือนถัดไป"
             >

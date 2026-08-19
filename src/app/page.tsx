@@ -219,6 +219,7 @@ export default function Home() {
           </div>
           <input
             type="text"
+            aria-label="ค้นหาชื่อแผนก หรือรหัสรถ"
             className="block w-full pl-11 pr-10 py-3 border border-white/15 rounded-xl leading-5 bg-black/60 text-white placeholder-gray-400 focus:outline-none focus:border-[#F58220] text-sm transition-colors"
             placeholder="ค้นหาชื่อแผนก (เช่น Intervention, ICU, นรีเวช) หรือรหัสรถ (เช่น A001, C032)..."
             value={searchQuery}
@@ -234,7 +235,9 @@ export default function Home() {
           )}
           {searchQuery && !isSearching && (
             <button
+              type="button"
               onClick={() => setSearchQuery('')}
+              aria-label="ล้างข้อความค้นหา"
               className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-xs text-gray-400 hover:text-white"
             >
               ล้าง
@@ -259,7 +262,9 @@ export default function Home() {
             return (
               <button
                 key={cat.id}
+                type="button"
                 onClick={() => setActiveCategory(cat.id)}
+                aria-label={`กรองตามหมวดหมู่ ${cat.label} มี ${count} แผนก`}
                 className={`px-3 py-1.5 rounded-xl whitespace-nowrap font-medium transition-all flex items-center gap-1.5 ${
                   isActive
                     ? 'bg-[#F58220] text-white shadow-md shadow-[#F58220]/25 font-semibold'
@@ -286,6 +291,7 @@ export default function Home() {
           </span>
           {activeCategory !== 'all' && (
             <button
+              type="button"
               onClick={() => setActiveCategory('all')}
               className="text-xs text-[#F58220] hover:underline"
             >
@@ -297,7 +303,9 @@ export default function Home() {
         {/* View Mode Switcher (Grid vs List) */}
         <div className="flex items-center bg-black/40 p-0.5 rounded-xl border border-white/10 text-xs">
           <button
+            type="button"
             onClick={() => setViewMode('grid')}
+            aria-label="แสดงแบบการ์ด"
             className={`px-2.5 py-1 rounded-lg font-medium transition-all flex items-center gap-1 ${
               viewMode === 'grid' ? 'bg-[#F58220] text-white font-semibold shadow' : 'text-gray-400 hover:text-white'
             }`}
@@ -307,7 +315,9 @@ export default function Home() {
             <span className="hidden sm:inline">แบบการ์ด</span>
           </button>
           <button
+            type="button"
             onClick={() => setViewMode('list')}
+            aria-label="แสดงแบบตารางรายการ"
             className={`px-2.5 py-1 rounded-lg font-medium transition-all flex items-center gap-1 ${
               viewMode === 'list' ? 'bg-[#F58220] text-white font-semibold shadow' : 'text-gray-400 hover:text-white'
             }`}

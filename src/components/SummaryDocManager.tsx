@@ -231,6 +231,7 @@ export default function SummaryDocManager({ records }: SummaryDocManagerProps) {
             </div>
             <input
               type="text"
+              aria-label="ค้นหาแผนก หรือรหัสรถ"
               className="block w-full pl-9 pr-8 py-2 bg-black/50 border border-white/15 rounded-xl text-xs text-white placeholder-gray-400 focus:outline-none focus:border-[#F58220] transition-colors"
               placeholder="ค้นหาแผนก หรือรหัสรถ (A073, C085)..."
               value={searchQuery}
@@ -238,7 +239,9 @@ export default function SummaryDocManager({ records }: SummaryDocManagerProps) {
             />
             {searchQuery && (
               <button
+                type="button"
                 onClick={() => setSearchQuery('')}
+                aria-label="ล้างข้อความค้นหา"
                 className="absolute inset-y-0 right-0 pr-2.5 flex items-center text-xs text-gray-400 hover:text-white"
               >
                 ✕
