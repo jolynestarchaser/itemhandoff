@@ -120,27 +120,38 @@ export default function Home() {
           </p>
         </div>
 
-        {/* Pending Vehicles Quick Banner Card */}
-        <Link
-          href="/pending-vehicles"
-          className="mt-4 sm:mt-0 inline-flex items-center gap-3 px-4 py-3 bg-gradient-to-r from-[#F58220]/20 via-[#F58220]/10 to-transparent hover:from-[#F58220]/30 hover:to-[#F58220]/10 border border-[#F58220]/40 rounded-2xl transition-all hover:scale-102 group shadow-lg shadow-[#F58220]/10 text-left"
-        >
-          <div className="w-10 h-10 rounded-xl bg-[#F58220] flex items-center justify-center text-white shadow-md shadow-[#F58220]/30 flex-shrink-0 group-hover:rotate-6 transition-transform">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="12" r="10"></circle>
-              <polyline points="12 6 12 12 16 14"></polyline>
-            </svg>
-          </div>
-          <div>
-            <div className="flex items-center gap-1.5">
-              <span className="text-xs font-bold text-[#F58220] uppercase tracking-wider">ตรวจสอบรหัสรถ</span>
-              <span className="w-2 h-2 rounded-full bg-[#F58220] animate-ping" />
+        {/* Quick Action Badges */}
+        <div className="mt-4 sm:mt-0 flex items-center gap-2.5 flex-wrap">
+          <Link
+            href="/print"
+            className="inline-flex items-center gap-2 px-3.5 py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 rounded-2xl text-xs font-semibold text-white transition-all hover:scale-102 shadow-md shadow-black/20"
+          >
+            <span>🖨️</span>
+            <span>ศูนย์พิมพ์เอกสาร</span>
+          </Link>
+
+          <Link
+            href="/template-builder"
+            className="inline-flex items-center gap-2 px-3.5 py-2.5 bg-[#F58220]/15 hover:bg-[#F58220]/25 border border-[#F58220]/30 rounded-2xl text-xs font-semibold text-[#F58220] transition-all hover:scale-102 shadow-md shadow-[#F58220]/10"
+          >
+            <span>✨</span>
+            <span>สร้าง Template PDF</span>
+          </Link>
+
+          <Link
+            href="/pending-vehicles"
+            className="inline-flex items-center gap-2.5 px-3.5 py-2.5 bg-gradient-to-r from-[#F58220]/20 via-[#F58220]/10 to-transparent hover:from-[#F58220]/30 hover:to-[#F58220]/10 border border-[#F58220]/40 rounded-2xl transition-all hover:scale-102 group shadow-lg shadow-[#F58220]/10 text-left"
+          >
+            <div className="w-6 h-6 rounded-lg bg-[#F58220] flex items-center justify-center text-white text-xs shadow-md shadow-[#F58220]/30 flex-shrink-0 group-hover:rotate-6 transition-transform">
+              ⚡
             </div>
-            <p className="text-sm font-extrabold text-white">
-              {overallStats ? `ค้างส่งมอบ ${overallStats.totalTarget - overallStats.totalDelivered} คัน` : 'ดูเลขรถที่ยังไม่ส่งมอบ'} &rarr;
-            </p>
-          </div>
-        </Link>
+            <div className="text-xs">
+              <span className="font-extrabold text-white">
+                {overallStats ? `ค้างส่ง ${overallStats.totalTarget - overallStats.totalDelivered} คัน` : 'ดูรถค้างส่ง'} &rarr;
+              </span>
+            </div>
+          </Link>
+        </div>
       </div>
 
       {/* KPI Stats Bar (Fleet Target: A: 200, B: 100, C: 100 -> Total: 400) */}

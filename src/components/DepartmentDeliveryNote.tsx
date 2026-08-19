@@ -102,7 +102,6 @@ export default function DepartmentDeliveryNote({ department, records, date }: De
           background: #fff;
           padding: 3rem;
           margin-bottom: 2rem;
-          box-shadow: 0 0 10px rgba(0,0,0,0.1);
           position: relative;
         }
         .copy-label {

@@ -124,7 +124,6 @@ export default function Day18DeliveryNotes({ records }: Day18DeliveryNotesProps)
           background: #fff;
           padding: 3rem;
           margin-bottom: 2rem;
-          box-shadow: 0 0 10px rgba(0,0,0,0.1);
           position: relative;
         }
         .copy-label {

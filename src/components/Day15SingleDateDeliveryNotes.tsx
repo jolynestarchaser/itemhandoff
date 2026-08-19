@@ -123,7 +123,6 @@ export default function Day15SingleDateDeliveryNotes({ records }: Day15SingleDat
           background: #fff;
           padding: 3rem;
           margin-bottom: 2rem;
-          box-shadow: 0 0 10px rgba(0,0,0,0.1);
           position: relative;
         }
         .copy-label {
