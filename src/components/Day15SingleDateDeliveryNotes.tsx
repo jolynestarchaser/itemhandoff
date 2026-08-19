@@ -1,36 +1,57 @@
 'use client';
 
 import { HandoffRecord } from '@prisma/client';
+import { departments as deptDict } from '@/lib/departments';
 
-interface DepartmentDeliveryNoteProps {
-  department: string;
+interface Day15SingleDateDeliveryNotesProps {
   records: HandoffRecord[];
-  date?: string; // YYYY-MM-DD
 }
 
-export default function DepartmentDeliveryNote({ department, records, date }: DepartmentDeliveryNoteProps) {
+export default function Day15SingleDateDeliveryNotes({ records }: Day15SingleDateDeliveryNotesProps) {
   const handlePrint = () => {
     window.print();
   };
 
-  const displayDate = date ? new Date(date) : new Date();
-  const formattedDate = displayDate.toLocaleDateString('th-TH', {
+  const formatDateStr = (date: Date | string) => {
+    const d = new Date(date);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  };
+
+  // Group all records by department
+  const deptMap: Record<string, HandoffRecord[]> = {};
+  records.forEach((r) => {
+    if (!deptMap[r.department]) deptMap[r.department] = [];
+    deptMap[r.department].push(r);
+  });
+
+  const targetDateStr = '2026-07-15';
+  const qualifyingDepts: { key: string; nameTh: string; records: HandoffRecord[] }[] = [];
+
+  Object.keys(deptMap).forEach((deptKey) => {
+    const deptRecords = deptMap[deptKey];
+    const uniqueDates = Array.from(new Set(deptRecords.map((r) => formatDateStr(r.handoffDate || r.createdAt))));
+
+    // Select departments that ONLY have records on July 15 (no other dates)
+    if (uniqueDates.length === 1 && uniqueDates[0] === targetDateStr) {
+      const nameTh = deptDict.find((d) => d.key === deptKey)?.nameTh || deptKey;
+      qualifyingDepts.push({
+        key: deptKey,
+        nameTh,
+        records: deptRecords,
+      });
+    }
+  });
+
+  // Sort departments by Key
+  qualifyingDepts.sort((a, b) => a.key.localeCompare(b.key));
+
+  const formattedDate = new Date('2026-07-15').toLocaleDateString('th-TH', {
     year: 'numeric',
     month: 'long',
     day: 'numeric',
   });
 
-  // Group records by product name
-  const groupedRecords = records.reduce((acc, record) => {
-    if (!acc[record.productName]) {
-      acc[record.productName] = [];
-    }
-    acc[record.productName].push(record.productId);
-    return acc;
-  }, {} as Record<string, string[]>);
-
-  // Component สำหรับ 1 หน้า A4
-  const NotePage = ({ copyLabel }: { copyLabel: string }) => (
+  const renderNotePage = (deptNameTh: string, groupedRecords: Record<string, string[]>, copyLabel: string) => (
     <div className="document-style">
       <div className="copy-label">{copyLabel}</div>
       <h1>ใบส่งสินค้าชั่วคราว</h1>
@@ -42,10 +63,10 @@ export default function DepartmentDeliveryNote({ department, records, date }: De
         </div>
         <div className="info-row">
           <div className="info-label">แผนก</div>
-          <div className="info-dots">{department}</div>
+          <div className="info-dots">{deptNameTh}</div>
         </div>
       </div>
-      
+
       <table>
         <thead>
           <tr>
@@ -73,8 +94,8 @@ export default function DepartmentDeliveryNote({ department, records, date }: De
       <div className="signature-area">
         <div className="signature-box">
           <div className="signature-title">ผู้รับสินค้า</div>
-          <div>{department}</div>
-          <br></br>
+          <div>{deptNameTh}</div>
+          <br />
           <div style={{ marginTop: '1rem' }}>ลายมือชื่อ</div>
           <div className="signature-line"></div>
           <div>ชื่อ</div>
@@ -129,6 +150,9 @@ export default function DepartmentDeliveryNote({ department, records, date }: De
           }
           .page-break {
             page-break-after: always;
+          }
+          .no-print {
+            display: none !important;
           }
         }
         .document-style h1 {
@@ -193,23 +217,63 @@ export default function DepartmentDeliveryNote({ department, records, date }: De
         }
       `}} />
 
-      {/* ปุ่มพิมพ์ (ซ่อนเมื่อพิมพ์) */}
-      <div className="no-print mb-4">
-        <button
-          onClick={handlePrint}
-          className="w-full py-3 bg-[#F58220] hover:bg-[#d9721a] text-white font-semibold rounded-xl transition-all flex items-center justify-center gap-2"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <polyline points="6 9 6 2 18 2 18 9" /><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" /><rect width="12" height="8" x="6" y="14" />
-          </svg>
-          พิมพ์ใบส่งมอบชั่วคราว
-        </button>
+      {/* Control bar (hidden during print) */}
+      <div className="no-print mb-6 p-6 bg-white/5 border border-white/10 rounded-2xl text-white">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
+          <div>
+            <h2 className="text-xl font-bold text-white mb-1">
+              ใบส่งมอบชั่วคราว (แผนกที่มีเฉพาะวันที่ 15 กรกฎาคม 2569 วันเดียวเท่านั้น)
+            </h2>
+            <p className="text-sm text-gray-400">
+              พบทั้งหมด <span className="text-[#F58220] font-bold">{qualifyingDepts.length}</span> แผนก (รวม {qualifyingDepts.length * 2} หน้า: ต้นฉบับ + สำเนา)
+            </p>
+          </div>
+
+          <button
+            onClick={handlePrint}
+            className="py-3 px-6 bg-[#F58220] hover:bg-[#d9721a] text-white font-semibold rounded-xl transition-all flex items-center justify-center gap-2 shadow-lg shadow-[#F58220]/20"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="6 9 6 2 18 2 18 9" /><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" /><rect width="12" height="8" x="6" y="14" />
+            </svg>
+            พิมพ์ใบส่งมอบ ({qualifyingDepts.length * 2} หน้า)
+          </button>
+        </div>
+
+        <div className="flex flex-wrap gap-2 text-xs text-gray-400 border-t border-white/10 pt-3 mt-2">
+          <span className="font-semibold text-gray-300">รายชื่อแผนกที่รวมอยู่:</span>
+          {qualifyingDepts.map((d) => (
+            <span key={d.key} className="bg-white/10 px-2 py-1 rounded text-gray-200">
+              {d.nameTh}
+            </span>
+          ))}
+        </div>
       </div>
 
+      {/* Pages Container */}
       <div className="print-only-wrapper">
-        <NotePage copyLabel="ต้นฉบับ (ผู้ส่งสินค้า)" />
-        <div className="page-break" />
-        <NotePage copyLabel="สำเนา (ผู้รับสินค้า)" />
+        {qualifyingDepts.map((d, index) => {
+          // Group by product name
+          const groupedRecords: Record<string, string[]> = {};
+          d.records.forEach((r) => {
+            if (!groupedRecords[r.productName]) groupedRecords[r.productName] = [];
+            groupedRecords[r.productName].push(r.productId);
+          });
+
+          const isLastDept = index === qualifyingDepts.length - 1;
+
+          return (
+            <div key={d.key}>
+              {/* Copy 1: ต้นฉบับ (ผู้ส่งสินค้า) */}
+              {renderNotePage(d.nameTh, groupedRecords, "ต้นฉบับ (ผู้ส่งสินค้า)")}
+              <div className="page-break" />
+
+              {/* Copy 2: สำเนา (ผู้รับสินค้า) */}
+              {renderNotePage(d.nameTh, groupedRecords, "สำเนา (ผู้รับสินค้า)")}
+              {!isLastDept && <div className="page-break" />}
+            </div>
+          );
+        })}
       </div>
     </div>
   );

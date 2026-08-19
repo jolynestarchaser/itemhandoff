@@ -3,6 +3,7 @@
 import prisma from '@/lib/prisma';
 import { revalidatePath, unstable_noStore } from 'next/cache';
 import { HandoffRecord } from '@prisma/client';
+import { departments, getDeptThaiName } from '@/lib/departments';
 
 export async function createHandoffRecord(data: { qrData: string; productName: string; productId: string; department: string; handoffDate?: string }) {
   try {
@@ -17,6 +18,8 @@ export async function createHandoffRecord(data: { qrData: string; productName: s
     });
     revalidatePath('/summary');
     revalidatePath(`/department/${data.department}`);
+    revalidatePath('/pending-vehicles');
+    revalidatePath('/');
     return { success: true, id: record.id };
   } catch (error) {
     console.error('Failed to create record:', error);
@@ -44,6 +47,8 @@ export async function createMultipleHandoffRecords(items: { qrData: string; prod
     if (items.length > 0) {
       revalidatePath('/summary');
       revalidatePath(`/department/${items[0].department}`);
+      revalidatePath('/pending-vehicles');
+      revalidatePath('/');
     }
     
     return { success: true, count: records.length };
@@ -119,6 +124,8 @@ export async function deleteRecord(id: string): Promise<{ success: boolean; erro
     await prisma.handoffRecord.delete({ where: { id } });
     revalidatePath(`/department/${record.department}`);
     revalidatePath('/summary');
+    revalidatePath('/pending-vehicles');
+    revalidatePath('/');
     return { success: true };
   } catch (error) {
     console.error(`Failed to delete record ${id}:`, error);
@@ -165,5 +172,387 @@ export async function searchDepartmentsByProduct(query: string): Promise<string[
   } catch (error) {
     console.error('Failed to search departments by product:', error);
     return [];
+  }
+}
+
+export interface DepartmentStatItem {
+  departmentKey: string;
+  departmentNameTh: string;
+  total: number;
+  countA: number;
+  countB: number;
+  countC: number;
+  countOther: number;
+  lastHandoff?: string;
+}
+
+// ดึงสถิติของทุกแผนก เพื่อแสดง Badge และสรุปในหน้าแรก
+export async function getDepartmentStatsMap(): Promise<Record<string, DepartmentStatItem>> {
+  unstable_noStore();
+  try {
+    const records = await prisma.handoffRecord.findMany({
+      select: {
+        department: true,
+        productId: true,
+        productName: true,
+        handoffDate: true,
+        createdAt: true,
+      }
+    });
+
+    const statsMap: Record<string, DepartmentStatItem> = {};
+
+    // Initialize with all known departments
+    departments.forEach(dept => {
+      statsMap[dept.key] = {
+        departmentKey: dept.key,
+        departmentNameTh: dept.nameTh,
+        total: 0,
+        countA: 0,
+        countB: 0,
+        countC: 0,
+        countOther: 0,
+      };
+    });
+
+    records.forEach(r => {
+      const deptKey = r.department;
+      if (!statsMap[deptKey]) {
+        statsMap[deptKey] = {
+          departmentKey: deptKey,
+          departmentNameTh: getDeptThaiName(deptKey),
+          total: 0,
+          countA: 0,
+          countB: 0,
+          countC: 0,
+          countOther: 0,
+        };
+      }
+
+      statsMap[deptKey].total += 1;
+      const pid = (r.productId || '').toUpperCase();
+      if (pid.startsWith('A')) {
+        statsMap[deptKey].countA += 1;
+      } else if (pid.startsWith('B')) {
+        statsMap[deptKey].countB += 1;
+      } else if (pid.startsWith('C')) {
+        statsMap[deptKey].countC += 1;
+      } else {
+        statsMap[deptKey].countOther += 1;
+      }
+
+      const dateStr = (r.handoffDate || r.createdAt)?.toISOString();
+      if (dateStr && (!statsMap[deptKey].lastHandoff || dateStr > statsMap[deptKey].lastHandoff!)) {
+        statsMap[deptKey].lastHandoff = dateStr;
+      }
+    });
+
+    return statsMap;
+  } catch (error) {
+    console.error('Failed to get department stats map:', error);
+    return {};
+  }
+}
+
+export interface VehicleHandoffStats {
+  totalDelivered: number;
+  totalTarget: number;
+  countA: number;
+  targetA: number;
+  countB: number;
+  targetB: number;
+  countC: number;
+  targetC: number;
+  countOther: number;
+  activeDepartmentsCount: number;
+  totalDepartmentsCount: number;
+  recentRecords: {
+    id: string;
+    productId: string;
+    productName: string;
+    department: string;
+    departmentNameTh: string;
+    date: string;
+  }[];
+}
+
+// ดึงภาพรวมสถิติสำหรับหน้าแรกและสรุปสถานะ
+export async function getVehicleHandoffStats(targets: { A?: number; B?: number; C?: number } = {}): Promise<VehicleHandoffStats> {
+  unstable_noStore();
+  try {
+    const records = await prisma.handoffRecord.findMany({
+      orderBy: { createdAt: 'desc' }
+    });
+
+    let countA = 0;
+    let countB = 0;
+    let countC = 0;
+    let countOther = 0;
+    let maxA = 0;
+    let maxB = 0;
+    let maxC = 0;
+
+    const deptSet = new Set<string>();
+
+    records.forEach(r => {
+      deptSet.add(r.department);
+      const pid = (r.productId || '').toUpperCase();
+      const num = parseInt(pid.replace(/\D/g, '')) || 0;
+
+      if (pid.startsWith('A')) {
+        countA++;
+        if (num > maxA) maxA = num;
+      } else if (pid.startsWith('B')) {
+        countB++;
+        if (num > maxB) maxB = num;
+      } else if (pid.startsWith('C')) {
+        countC++;
+        if (num > maxC) maxC = num;
+      } else {
+        countOther++;
+      }
+    });
+
+    // Default targets: 200 for A, 100 for B, 100 for C (Total: 400)
+    const targetA = targets.A ?? Math.max(200, maxA);
+    const targetB = targets.B ?? Math.max(100, maxB);
+    const targetC = targets.C ?? Math.max(100, maxC);
+    const totalTarget = targetA + targetB + targetC;
+
+    const recentRecords = records.slice(0, 6).map(r => ({
+      id: r.id,
+      productId: r.productId,
+      productName: r.productName,
+      department: r.department,
+      departmentNameTh: getDeptThaiName(r.department),
+      date: (r.handoffDate || r.createdAt).toISOString(),
+    }));
+
+    return {
+      totalDelivered: records.length,
+      totalTarget,
+      countA,
+      targetA,
+      countB,
+      targetB,
+      countC,
+      targetC,
+      countOther,
+      activeDepartmentsCount: deptSet.size,
+      totalDepartmentsCount: departments.length,
+      recentRecords,
+    };
+  } catch (error) {
+    console.error('Failed to get vehicle stats:', error);
+    return {
+      totalDelivered: 0,
+      totalTarget: 400,
+      countA: 0,
+      targetA: 200,
+      countB: 0,
+      targetB: 100,
+      countC: 0,
+      targetC: 100,
+      countOther: 0,
+      activeDepartmentsCount: 0,
+      totalDepartmentsCount: departments.length,
+      recentRecords: [],
+    };
+  }
+}
+
+export interface VehicleStatusItem {
+  code: string;
+  type: 'A' | 'B' | 'C' | 'other';
+  productName: string;
+  isDelivered: boolean;
+  departmentKey?: string;
+  departmentNameTh?: string;
+  handoffDate?: string;
+  recordId?: string;
+}
+
+export interface VehicleTrackerData {
+  items: VehicleStatusItem[];
+  summary: {
+    totalFleet: number;
+    deliveredCount: number;
+    pendingCount: number;
+    typeA: { delivered: number; target: number; pending: number; maxDeliveredNum: number; gaps: string[] };
+    typeB: { delivered: number; target: number; pending: number; maxDeliveredNum: number; gaps: string[] };
+    typeC: { delivered: number; target: number; pending: number; maxDeliveredNum: number; gaps: string[] };
+  };
+}
+
+// คำนวณสถานะรถเข็นทุกคัน (ส่งมอบแล้ว / ยังไม่ได้ส่งมอบ)
+export async function getAllVehicleStatuses(customTargets: { A?: number; B?: number; C?: number } = {}): Promise<VehicleTrackerData> {
+  unstable_noStore();
+  try {
+    const records = await prisma.handoffRecord.findMany({
+      orderBy: { createdAt: 'asc' }
+    });
+
+    const recordMap = new Map<string, HandoffRecord>();
+    records.forEach(r => {
+      recordMap.set(r.productId.toUpperCase(), r);
+    });
+
+    // Detect maximum numbers in records
+    let maxA = 0;
+    let maxB = 0;
+    let maxC = 0;
+
+    const deliveredANums = new Set<number>();
+    const deliveredBNums = new Set<number>();
+    const deliveredCNums = new Set<number>();
+
+    records.forEach(r => {
+      const pid = r.productId.toUpperCase();
+      const num = parseInt(pid.replace(/\D/g, '')) || 0;
+      if (pid.startsWith('A') && num > 0) {
+        deliveredANums.add(num);
+        if (num > maxA) maxA = num;
+      } else if (pid.startsWith('B') && num > 0) {
+        deliveredBNums.add(num);
+        if (num > maxB) maxB = num;
+      } else if (pid.startsWith('C') && num > 0) {
+        deliveredCNums.add(num);
+        if (num > maxC) maxC = num;
+      }
+    });
+
+    const targetA = customTargets.A ?? Math.max(200, maxA);
+    const targetB = customTargets.B ?? Math.max(100, maxB);
+    const targetC = customTargets.C ?? Math.max(100, maxC);
+
+    const items: VehicleStatusItem[] = [];
+
+    // Build A vehicles
+    for (let i = 1; i <= targetA; i++) {
+      const code = `A${String(i).padStart(3, '0')}`;
+      const rec = recordMap.get(code);
+      items.push({
+        code,
+        type: 'A',
+        productName: rec?.productName || 'APIX Round A',
+        isDelivered: !!rec,
+        departmentKey: rec?.department,
+        departmentNameTh: rec ? getDeptThaiName(rec.department) : undefined,
+        handoffDate: rec ? (rec.handoffDate || rec.createdAt).toISOString() : undefined,
+        recordId: rec?.id,
+      });
+    }
+
+    // Build B vehicles
+    for (let i = 1; i <= targetB; i++) {
+      const code = `B${String(i).padStart(3, '0')}`;
+      const rec = recordMap.get(code);
+      items.push({
+        code,
+        type: 'B',
+        productName: rec?.productName || 'APIX RX B',
+        isDelivered: !!rec,
+        departmentKey: rec?.department,
+        departmentNameTh: rec ? getDeptThaiName(rec.department) : undefined,
+        handoffDate: rec ? (rec.handoffDate || rec.createdAt).toISOString() : undefined,
+        recordId: rec?.id,
+      });
+    }
+
+    // Build C vehicles
+    for (let i = 1; i <= targetC; i++) {
+      const code = `C${String(i).padStart(3, '0')}`;
+      const rec = recordMap.get(code);
+      items.push({
+        code,
+        type: 'C',
+        productName: rec?.productName || 'APIX Flow C',
+        isDelivered: !!rec,
+        departmentKey: rec?.department,
+        departmentNameTh: rec ? getDeptThaiName(rec.department) : undefined,
+        handoffDate: rec ? (rec.handoffDate || rec.createdAt).toISOString() : undefined,
+        recordId: rec?.id,
+      });
+    }
+
+    // Add other items in DB that don't match A/B/C or exceed target
+    records.forEach(r => {
+      const pid = r.productId.toUpperCase();
+      if (!items.some(it => it.code === pid)) {
+        items.push({
+          code: pid,
+          type: 'other',
+          productName: r.productName,
+          isDelivered: true,
+          departmentKey: r.department,
+          departmentNameTh: getDeptThaiName(r.department),
+          handoffDate: (r.handoffDate || r.createdAt).toISOString(),
+          recordId: r.id,
+        });
+      }
+    });
+
+    // Compute sequence gaps up to max delivered number
+    const gapsA: string[] = [];
+    for (let i = 1; i <= maxA; i++) {
+      if (!deliveredANums.has(i)) gapsA.push(`A${String(i).padStart(3, '0')}`);
+    }
+
+    const gapsB: string[] = [];
+    for (let i = 1; i <= maxB; i++) {
+      if (!deliveredBNums.has(i)) gapsB.push(`B${String(i).padStart(3, '0')}`);
+    }
+
+    const gapsC: string[] = [];
+    for (let i = 1; i <= maxC; i++) {
+      if (!deliveredCNums.has(i)) gapsC.push(`C${String(i).padStart(3, '0')}`);
+    }
+
+    const deliveredCount = records.length;
+    const totalFleet = items.length;
+    const pendingCount = totalFleet - deliveredCount;
+
+    return {
+      items,
+      summary: {
+        totalFleet,
+        deliveredCount,
+        pendingCount,
+        typeA: {
+          delivered: deliveredANums.size,
+          target: targetA,
+          pending: targetA - deliveredANums.size,
+          maxDeliveredNum: maxA,
+          gaps: gapsA,
+        },
+        typeB: {
+          delivered: deliveredBNums.size,
+          target: targetB,
+          pending: targetB - deliveredBNums.size,
+          maxDeliveredNum: maxB,
+          gaps: gapsB,
+        },
+        typeC: {
+          delivered: deliveredCNums.size,
+          target: targetC,
+          pending: targetC - deliveredCNums.size,
+          maxDeliveredNum: maxC,
+          gaps: gapsC,
+        },
+      }
+    };
+  } catch (error) {
+    console.error('Failed to get vehicle statuses:', error);
+    return {
+      items: [],
+      summary: {
+        totalFleet: 0,
+        deliveredCount: 0,
+        pendingCount: 0,
+        typeA: { delivered: 0, target: 200, pending: 200, maxDeliveredNum: 0, gaps: [] },
+        typeB: { delivered: 0, target: 100, pending: 100, maxDeliveredNum: 0, gaps: [] },
+        typeC: { delivered: 0, target: 100, pending: 100, maxDeliveredNum: 0, gaps: [] },
+      }
+    };
   }
 }
