@@ -7,17 +7,17 @@ export interface TemplatePlaceholder {
 export const availablePlaceholders: TemplatePlaceholder[] = [
   { key: 'hospitalName', label: 'ชื่อโรงพยาบาล / หน่วยงาน', example: 'โรงพยาบาลวชิระภูเก็ต' },
   { key: 'departmentName', label: 'ชื่อแผนก (ภาษาไทย)', example: 'ICU ศัลยกรรม' },
-  { key: 'contractNo', label: 'เลขที่สัญญา', example: '123/2569' },
-  { key: 'deliveryDate', label: 'วันที่ส่งมอบ', example: '19 สิงหาคม 2569' },
+  { key: 'contractNo', label: 'เลขที่สัญญา', example: 'วภ 104/2569' },
+  { key: 'deliveryDate', label: 'วันที่ส่งมอบ', example: '15 กรกฎาคม 2569' },
   { key: 'productName', label: 'ชื่อรุ่นสินค้า (ภาษาอังกฤษ)', example: 'APIX RX B' },
   { key: 'productOfficialName', label: 'ชื่อทางการสินค้า', example: 'รถเข็นคอมพิวเตอร์ All-in-one พร้อมลิ้นชักจัดเก็บยา ๒๐ ช่อง (Drug Administration Cart)' },
   { key: 'productCode', label: 'รหัสประเภทรถ (A/B/C)', example: 'B' },
   { key: 'serialList', label: 'รายการรหัส Serial Number', example: 'B001, B002, B003' },
   { key: 'quantity', label: 'จำนวน (คัน)', example: '3' },
-  { key: 'receiverName', label: 'ชื่อผู้รับมอบ', example: 'พว.สมใจ ใจดี' },
+  { key: 'receiverName', label: 'ชื่อผู้รับมอบ', example: '' },
   { key: 'receiverCompany', label: 'หน่วยงานผู้รับมอบ', example: 'โรงพยาบาลวชิระภูเก็ต' },
-  { key: 'senderName', label: 'ชื่อผู้ส่งมอบ', example: 'นายช่างเทคนิค นำส่ง' },
-  { key: 'senderCompany', label: 'บริษัทผู้ส่งมอบ', example: 'บริษัท แอพพิกซ์ อินโนเวชั่น จำกัด' },
+  { key: 'senderName', label: 'ชื่อผู้ส่งมอบ', example: '' },
+  { key: 'senderCompany', label: 'บริษัทผู้ส่งมอบ', example: 'บริษัท อภิลักษณ์ เฮลท์แคร์ คอร์เปอร์เรชั่น' },
   { key: 'notes', label: 'หมายเหตุเพิ่มเติม', example: 'อุปกรณ์ครบถ้วน พร้อมใช้งานและทดสอบระบบเรียบร้อย' },
 ];
 
@@ -33,13 +33,13 @@ export interface DocumentPreset {
 export const documentPresets: DocumentPreset[] = [
   {
     id: 'hospital-delivery-note',
-    name: 'ใบส่งสินค้าชั่วคราว (มาตรฐานโรงพยาบาล)',
-    description: 'เอกสารส่งมอบสินค้าแยกรายแผนก แสดงชื่อรุ่นสินค้าภาษาอังกฤษ และมีวันที่ส่วนหัว',
+    name: 'ใบส่งสินค้าชั่วคราว (ต้นฉบับ + สำเนา มาตรฐาน รพ.)',
+    description: 'เอกสารส่งมอบสินค้า 2 หน้า (ต้นฉบับผู้ส่ง + สำเนาผู้รับ) ขนาด A4 เค้าโครงเดียวกับ delivery_notes_15th_single_date.pdf',
     category: 'delivery',
     defaultTitle: 'ใบส่งสินค้าชั่วคราว',
     templateHtml: `
 <div class="document-style">
-  <div class="copy-label">ต้นฉบับ</div>
+  <div class="copy-label">ต้นฉบับ (ผู้ส่งสินค้า)</div>
   <h1>ใบส่งสินค้าชั่วคราว</h1>
   
   <div class="header-info">
@@ -48,7 +48,7 @@ export const documentPresets: DocumentPreset[] = [
       <div class="info-dots">{{deliveryDate}}</div>
     </div>
     <div class="info-row">
-      <div class="info-label">หน่วยงาน</div>
+      <div class="info-label">แผนก</div>
       <div class="info-dots">{{departmentName}}</div>
     </div>
   </div>
@@ -56,8 +56,8 @@ export const documentPresets: DocumentPreset[] = [
   <table>
     <thead>
       <tr>
-        <th style="width: 55%;">ชื่อสินค้า</th>
-        <th style="width: 30%;">Serial Number</th>
+        <th>ชื่อสินค้า</th>
+        <th>Serial Number</th>
         <th style="width: 15%; text-align: center;">จำนวน</th>
       </tr>
     </thead>
@@ -73,10 +73,11 @@ export const documentPresets: DocumentPreset[] = [
   <div class="signature-area">
     <div class="signature-box">
       <div class="signature-title">ผู้รับสินค้า</div>
-      <div>{{hospitalName}}</div>
+      <div>{{departmentName}}</div>
+      <br />
       <div style="margin-top: 1rem;">ลายมือชื่อ</div>
       <div class="signature-line"></div>
-      <div>ชื่อ ( {{receiverName}} )</div>
+      <div>ชื่อ</div>
       <div class="signature-line"></div>
     </div>
     <div class="signature-box">
@@ -84,7 +85,62 @@ export const documentPresets: DocumentPreset[] = [
       <div>{{senderCompany}}</div>
       <div style="margin-top: 1rem;">ลายมือชื่อ</div>
       <div class="signature-line"></div>
-      <div>ชื่อ ( {{senderName}} )</div>
+      <div>ชื่อ</div>
+      <div class="signature-line"></div>
+    </div>
+  </div>
+</div>
+
+<div class="page-break"></div>
+
+<div class="document-style">
+  <div class="copy-label">สำเนา (ผู้รับสินค้า)</div>
+  <h1>ใบส่งสินค้าชั่วคราว</h1>
+  
+  <div class="header-info">
+    <div class="info-row">
+      <div class="info-label">วันที่ส่ง</div>
+      <div class="info-dots">{{deliveryDate}}</div>
+    </div>
+    <div class="info-row">
+      <div class="info-label">แผนก</div>
+      <div class="info-dots">{{departmentName}}</div>
+    </div>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>ชื่อสินค้า</th>
+        <th>Serial Number</th>
+        <th style="width: 15%; text-align: center;">จำนวน</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>{{productName}}</td>
+        <td>{{serialList}}</td>
+        <td style="text-align: center;">{{quantity}}</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="signature-area">
+    <div class="signature-box">
+      <div class="signature-title">ผู้รับสินค้า</div>
+      <div>{{departmentName}}</div>
+      <br />
+      <div style="margin-top: 1rem;">ลายมือชื่อ</div>
+      <div class="signature-line"></div>
+      <div>ชื่อ</div>
+      <div class="signature-line"></div>
+    </div>
+    <div class="signature-box">
+      <div class="signature-title">ผู้ส่งสินค้า</div>
+      <div>{{senderCompany}}</div>
+      <div style="margin-top: 1rem;">ลายมือชื่อ</div>
+      <div class="signature-line"></div>
+      <div>ชื่อ</div>
       <div class="signature-line"></div>
     </div>
   </div>

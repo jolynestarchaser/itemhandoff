@@ -120,10 +120,6 @@ export default function SummaryDocManager({ records }: SummaryDocManagerProps) {
     });
   }, [deliveryItems, selectedDate, searchQuery]);
 
-  const handlePrintAll = () => {
-    window.print();
-  };
-
   return (
     <div className="text-white pb-20">
       {/* On-screen UI — Hidden during printing */}
@@ -151,13 +147,13 @@ export default function SummaryDocManager({ records }: SummaryDocManagerProps) {
 
             {/* Global Action Buttons */}
             <div className="flex flex-wrap items-center gap-2">
-              <button
-                onClick={handlePrintAll}
+              <Link
+                href="/print"
                 className="px-4 py-2.5 bg-[#F58220] hover:bg-[#d9721a] text-white text-xs sm:text-sm font-semibold rounded-xl transition-all flex items-center gap-2 shadow-lg shadow-[#F58220]/20"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 9V2h12v7"></path><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
-                <span>พิมพ์เอกสารทั้งหมด (A4)</span>
-              </button>
+                <span>ศูนย์รวมการพิมพ์ (Print Hub)</span>
+              </Link>
 
               <ExportButton records={records} />
             </div>

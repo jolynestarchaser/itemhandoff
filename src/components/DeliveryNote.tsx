@@ -1,21 +1,24 @@
 'use client';
 
-import { useEffect } from 'react';
+import React, { useRef } from 'react';
 import Link from 'next/link';
 import { HandoffRecord } from '@prisma/client';
+import { printHtmlDocument } from '@/lib/printUtils';
 
 interface DeliveryNoteProps {
   record: HandoffRecord;
 }
 
 export default function DeliveryNote({ record }: DeliveryNoteProps) {
-  // สั่งให้เบราว์เซอร์เปิดหน้าต่าง Print อัตโนมัติเมื่อโหลดหน้านี้เสร็จ (หน่วงเวลา 500ms)
-  useEffect(() => {
-    const timer = setTimeout(() => {
+  const printAreaRef = useRef<HTMLDivElement>(null);
+
+  const handlePrint = () => {
+    if (printAreaRef.current) {
+      printHtmlDocument(printAreaRef.current.innerHTML, `Delivery Note - ${record.productId}`);
+    } else {
       window.print();
-    }, 500);
-    return () => clearTimeout(timer);
-  }, []);
+    }
+  };
 
   // จัดรูปแบบวันที่ให้อ่านง่าย
   const formattedDate = new Date(record.createdAt).toLocaleString('en-US', {
@@ -85,7 +88,7 @@ export default function DeliveryNote({ record }: DeliveryNoteProps) {
     <div className="print-container bg-white min-h-screen font-sans">
       {/* ส่วนควบคุมบนหน้าจอ จะถูกซ่อนเมื่อพิมพ์ (no-print) */}
       <div className="no-print p-4 flex gap-4 bg-slate-100 border-b border-slate-200">
-        <button onClick={() => window.print()} className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 font-medium cursor-pointer">
+        <button onClick={handlePrint} className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 font-medium cursor-pointer">
           Print Now
         </button>
         <Link href="/" className="px-4 py-2 bg-white text-slate-700 border border-slate-300 rounded hover:bg-slate-50 font-medium">
@@ -94,8 +97,10 @@ export default function DeliveryNote({ record }: DeliveryNoteProps) {
       </div>
 
       {/* แสดง 2 สำเนา ต้นฉบับและสำเนาผู้รับ */}
-      <NoteCopy title="Sender Copy" />
-      <NoteCopy title="Receiver Copy" />
+      <div ref={printAreaRef}>
+        <NoteCopy title="Sender Copy" />
+        <NoteCopy title="Receiver Copy" />
+      </div>
     </div>
   );
 }

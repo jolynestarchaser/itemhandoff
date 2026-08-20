@@ -320,10 +320,6 @@ export default function DepartmentPage() {
     setDeleteTarget(null);
   };
 
-  const handlePrint = () => {
-    window.print();
-  };
-
   return (
     <div className="max-w-4xl mx-auto px-4 py-2 text-white pb-24">
       {/* On-Screen Navigation & Header */}
@@ -735,7 +731,7 @@ export default function DepartmentPage() {
                 </button>
                 {dateFilteredRecords.length > 0 && (
                   <button
-                    onClick={handlePrint}
+                    onClick={() => setActiveTab('print')}
                     className="px-3.5 py-2 bg-white/10 hover:bg-white/20 text-white text-xs font-semibold rounded-xl transition-all flex items-center gap-1.5"
                   >
                     <span>🖨️ สั่งพิมพ์ A4</span>
@@ -839,13 +835,8 @@ export default function DepartmentPage() {
         {activeTab === 'print' && (
           <div className="space-y-4 animate-in fade-in duration-200">
             <div className="flex items-center justify-between bg-white/5 p-3 rounded-xl border border-white/10">
-              <span className="text-xs text-gray-300">ตัวอย่างใบส่งมอบชั่วคราว (ขนาด A4 พร้อมต้นฉบับและสำเนา)</span>
-              <button
-                onClick={handlePrint}
-                className="px-4 py-2 bg-[#F58220] hover:bg-[#d9721a] text-white text-xs font-bold rounded-xl transition-all flex items-center gap-2 shadow"
-              >
-                <span>🖨️ สั่งพิมพ์เอกสารนี้</span>
-              </button>
+              <span className="text-xs text-gray-300">📄 ตัวอย่างใบส่งมอบชั่วคราว (ขนาด A4 พร้อมต้นฉบับและสำเนา)</span>
+              <span className="text-xs text-emerald-400 font-semibold">✓ สีขาวล้วน 100% ไร้ขอบดำ</span>
             </div>
           </div>
         )}
@@ -854,7 +845,7 @@ export default function DepartmentPage() {
       {/* Print Delivery Note Document Section */}
       {dateFilteredRecords.length > 0 && (
         <div className={activeTab === 'print' ? 'block' : 'hidden print:block'}>
-          <div className="bg-white rounded-xl shadow-2xl overflow-hidden print-content border border-gray-200">
+          <div className="bg-white overflow-hidden print-content border border-gray-200 print:border-none print:shadow-none">
             <DepartmentDeliveryNote
               department={departmentNameTh}
               records={dateFilteredRecords}

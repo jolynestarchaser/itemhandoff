@@ -1,15 +1,23 @@
 'use client';
 
+import React, { useRef } from 'react';
 import { HandoffRecord } from '@prisma/client';
 import { departments as deptDict } from '@/lib/departments';
+import { printHtmlDocument } from '@/lib/printUtils';
 
 interface Day15SingleDateDeliveryNotesProps {
   records: HandoffRecord[];
 }
 
 export default function Day15SingleDateDeliveryNotes({ records }: Day15SingleDateDeliveryNotesProps) {
+  const printContainerRef = useRef<HTMLDivElement>(null);
+
   const handlePrint = () => {
-    window.print();
+    if (printContainerRef.current) {
+      printHtmlDocument(printContainerRef.current.innerHTML, 'ใบส่งมอบสินค้า (วันที่ 15 เฉพาะ)');
+    } else {
+      window.print();
+    }
   };
 
   const formatDateStr = (date: Date | string) => {
@@ -124,6 +132,8 @@ export default function Day15SingleDateDeliveryNotes({ records }: Day15SingleDat
           padding: 3rem;
           margin-bottom: 2rem;
           position: relative;
+          box-shadow: none !important;
+          border-radius: 0 !important;
         }
         .copy-label {
           position: absolute;
@@ -133,6 +143,11 @@ export default function Day15SingleDateDeliveryNotes({ records }: Day15SingleDat
           color: #666;
         }
         @media print {
+          * {
+            box-shadow: none !important;
+            text-shadow: none !important;
+            filter: none !important;
+          }
           @page {
             size: A4;
             margin: 3rem; /* จัดเอกสารให้อยู่ตรงกลาง ซ้าย-ขวา-บน-ล่าง เท่ากัน */
@@ -141,14 +156,21 @@ export default function Day15SingleDateDeliveryNotes({ records }: Day15SingleDat
             margin: 0;
             padding: 0;
             background: #fff;
+            font-family: 'Sarabun', 'TH Sarabun New', sans-serif;
+            color: #000;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
           }
           .document-style {
-            padding: 0;
-            margin-bottom: 0;
-            box-shadow: none;
+            padding: 0 !important;
+            margin-bottom: 0 !important;
+            box-shadow: none !important;
+            border-radius: 0 !important;
+            border: none !important;
           }
           .page-break {
             page-break-after: always;
+            break-after: page;
           }
           .no-print {
             display: none !important;
@@ -250,7 +272,7 @@ export default function Day15SingleDateDeliveryNotes({ records }: Day15SingleDat
       </div>
 
       {/* Pages Container */}
-      <div className="print-only-wrapper">
+      <div ref={printContainerRef} className="print-only-wrapper">
         {qualifyingDepts.map((d, index) => {
           // Group by product name
           const groupedRecords: Record<string, string[]> = {};

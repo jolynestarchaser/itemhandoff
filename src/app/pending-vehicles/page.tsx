@@ -312,6 +312,69 @@ export default function PendingVehiclesPage() {
         </div>
       </div>
 
+      {/* Spare & Unassembled Inventory Stock Banner */}
+      <div className="mb-6 p-4 rounded-2xl bg-gradient-to-r from-amber-500/15 via-black/40 to-blue-500/15 border border-amber-500/30 backdrop-blur-md">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-white/10">
+          <div className="flex items-center gap-2">
+            <span className="text-xl">📦</span>
+            <div>
+              <h2 className="text-sm font-bold text-white">คลังรถสำรอง (Spare) และรอประกอบ (Unassembled)</h2>
+              <p className="text-[11px] text-gray-400">ข้อมูลรถเข็นสำรองหน้างาน และชิ้นส่วนที่พร้อมประกอบเพิ่มเติม</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 text-xs font-mono">
+            <span className="px-2.5 py-1 rounded-lg bg-amber-500/20 text-amber-300 border border-amber-500/30 font-bold">
+              Spare รวม: {data?.stock?.totalSpare ?? 20} คัน
+            </span>
+            <span className="px-2.5 py-1 rounded-lg bg-blue-500/20 text-blue-300 border border-blue-500/30 font-bold">
+              รอประกอบ: {data?.stock?.totalUnassembled ?? 100} คัน
+            </span>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-3">
+          <div className="p-2.5 rounded-xl bg-white/5 border border-white/10 flex items-center justify-between">
+            <div>
+              <span className="text-[11px] text-gray-400">รถสำรอง Type A</span>
+              <div className="text-sm font-bold text-blue-300">APIX Round A</div>
+            </div>
+            <span className="text-base font-black font-mono text-white bg-blue-500/20 px-2 py-0.5 rounded border border-blue-500/30">
+              {data?.stock?.spareA ?? 10} คัน
+            </span>
+          </div>
+
+          <div className="p-2.5 rounded-xl bg-white/5 border border-white/10 flex items-center justify-between">
+            <div>
+              <span className="text-[11px] text-gray-400">รถสำรอง Type B</span>
+              <div className="text-sm font-bold text-emerald-300">APIX RX B</div>
+            </div>
+            <span className="text-base font-black font-mono text-white bg-emerald-500/20 px-2 py-0.5 rounded border border-emerald-500/30">
+              {data?.stock?.spareB ?? 5} คัน
+            </span>
+          </div>
+
+          <div className="p-2.5 rounded-xl bg-white/5 border border-white/10 flex items-center justify-between">
+            <div>
+              <span className="text-[11px] text-gray-400">รถสำรอง Type C</span>
+              <div className="text-sm font-bold text-purple-300">APIX Flow C</div>
+            </div>
+            <span className="text-base font-black font-mono text-white bg-purple-500/20 px-2 py-0.5 rounded border border-purple-500/30">
+              {data?.stock?.spareC ?? 5} คัน
+            </span>
+          </div>
+
+          <div className="p-2.5 rounded-xl bg-blue-500/10 border border-blue-500/30 flex items-center justify-between">
+            <div>
+              <span className="text-[11px] text-blue-300">Type A ที่ยังไม่ประกอบ</span>
+              <div className="text-sm font-bold text-white">พร้อมประกอบ</div>
+            </div>
+            <span className="text-base font-black font-mono text-blue-300 bg-blue-500/30 px-2 py-0.5 rounded border border-blue-500/40">
+              {data?.stock?.unassembledA ?? 100} คัน
+            </span>
+          </div>
+        </div>
+      </div>
+
       {/* Sequence Gap Alert (if any gap or complete) */}
       {data && (
         <div className="mb-6 p-4 rounded-2xl bg-white/5 border border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs sm:text-sm">

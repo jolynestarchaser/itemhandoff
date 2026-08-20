@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { HandoffRecord } from '@prisma/client';
 import { departments as deptDict } from '@/lib/departments';
+import { printHtmlDocument } from '@/lib/printUtils';
 
 interface AllDepartmentsSummaryNoteProps {
   records: HandoffRecord[];
@@ -10,9 +11,14 @@ interface AllDepartmentsSummaryNoteProps {
 
 export default function AllDepartmentsSummaryNote({ records }: AllDepartmentsSummaryNoteProps) {
   const [viewMode, setViewMode] = useState<string>('all'); // 'all' หรือ 'YYYY-MM-DD'
+  const printContainerRef = useRef<HTMLDivElement>(null);
 
   const handlePrint = () => {
-    window.print();
+    if (printContainerRef.current) {
+      printHtmlDocument(printContainerRef.current.innerHTML, 'ใบสรุปรายการส่งมอบรถเข็นโรงพยาบาล');
+    } else {
+      window.print();
+    }
   };
 
   // กำหนดรายการสินค้าหลัก (A, B, C) ตามโครงสร้าง
@@ -46,8 +52,15 @@ export default function AllDepartmentsSummaryNote({ records }: AllDepartmentsSum
           background: #fff;
           padding: 3rem;
           margin-bottom: 2rem;
+          box-shadow: none !important;
+          border-radius: 0 !important;
         }
         @media print {
+          * {
+            box-shadow: none !important;
+            text-shadow: none !important;
+            filter: none !important;
+          }
           @page {
             size: A4;
             margin: 3rem; /* จัดเอกสารให้อยู่ตรงกลาง ซ้าย-ขวา-บน-ล่าง เท่ากัน */
@@ -56,14 +69,21 @@ export default function AllDepartmentsSummaryNote({ records }: AllDepartmentsSum
             margin: 0;
             padding: 0;
             background: #fff;
+            font-family: 'Sarabun', 'TH Sarabun New', sans-serif;
+            color: #000;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
           }
           .document-style {
-            padding: 0;
-            margin-bottom: 0;
-            box-shadow: none;
+            padding: 0 !important;
+            margin-bottom: 0 !important;
+            box-shadow: none !important;
+            border-radius: 0 !important;
+            border: none !important;
           }
           .page-break {
             page-break-after: always;
+            break-after: page;
           }
         }
         .document-style h1 {
@@ -142,7 +162,7 @@ export default function AllDepartmentsSummaryNote({ records }: AllDepartmentsSum
         </button>
       </div>
 
-      <div className="print-only-wrapper">
+      <div ref={printContainerRef} className="print-only-wrapper">
         {uniqueDates.length === 0 ? (
           <div className="document-style">
             <h1>ใบสรุปรายการส่งมอบ</h1>

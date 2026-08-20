@@ -254,6 +254,17 @@ export async function getDepartmentStatsMap(): Promise<Record<string, Department
   }
 }
 
+export interface InventoryStockStats {
+  spareA: number;
+  spareB: number;
+  spareC: number;
+  totalSpare: number;
+  unassembledA: number;
+  unassembledB: number;
+  unassembledC: number;
+  totalUnassembled: number;
+}
+
 export interface VehicleHandoffStats {
   totalDelivered: number;
   totalTarget: number;
@@ -266,6 +277,7 @@ export interface VehicleHandoffStats {
   countOther: number;
   activeDepartmentsCount: number;
   totalDepartmentsCount: number;
+  stock: InventoryStockStats;
   recentRecords: {
     id: string;
     productId: string;
@@ -275,6 +287,18 @@ export interface VehicleHandoffStats {
     date: string;
   }[];
 }
+
+// Default Spare & Unassembled stock configuration
+const DEFAULT_INVENTORY_STOCK: InventoryStockStats = {
+  spareA: 10,
+  spareB: 5,
+  spareC: 5,
+  totalSpare: 20,
+  unassembledA: 100,
+  unassembledB: 0,
+  unassembledC: 0,
+  totalUnassembled: 100,
+};
 
 // ดึงภาพรวมสถิติสำหรับหน้าแรกและสรุปสถานะ
 export async function getVehicleHandoffStats(targets: { A?: number; B?: number; C?: number } = {}): Promise<VehicleHandoffStats> {
@@ -340,6 +364,7 @@ export async function getVehicleHandoffStats(targets: { A?: number; B?: number; 
       countOther,
       activeDepartmentsCount: deptSet.size,
       totalDepartmentsCount: departments.length,
+      stock: DEFAULT_INVENTORY_STOCK,
       recentRecords,
     };
   } catch (error) {
@@ -356,6 +381,7 @@ export async function getVehicleHandoffStats(targets: { A?: number; B?: number; 
       countOther: 0,
       activeDepartmentsCount: 0,
       totalDepartmentsCount: departments.length,
+      stock: DEFAULT_INVENTORY_STOCK,
       recentRecords: [],
     };
   }
@@ -374,6 +400,7 @@ export interface VehicleStatusItem {
 
 export interface VehicleTrackerData {
   items: VehicleStatusItem[];
+  stock: InventoryStockStats;
   summary: {
     totalFleet: number;
     deliveredCount: number;
@@ -514,6 +541,7 @@ export async function getAllVehicleStatuses(customTargets: { A?: number; B?: num
 
     return {
       items,
+      stock: DEFAULT_INVENTORY_STOCK,
       summary: {
         totalFleet,
         deliveredCount,
@@ -545,6 +573,7 @@ export async function getAllVehicleStatuses(customTargets: { A?: number; B?: num
     console.error('Failed to get vehicle statuses:', error);
     return {
       items: [],
+      stock: DEFAULT_INVENTORY_STOCK,
       summary: {
         totalFleet: 0,
         deliveredCount: 0,

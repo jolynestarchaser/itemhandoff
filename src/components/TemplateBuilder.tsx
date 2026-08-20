@@ -9,6 +9,7 @@ import {
   replaceTemplatePlaceholders 
 } from '@/lib/templatePresets';
 import { createMultipleHandoffRecords } from '@/lib/actions';
+import { printHtmlDocument } from '@/lib/printUtils';
 import Link from 'next/link';
 
 interface SavedTemplateItem {
@@ -23,25 +24,23 @@ export default function TemplateBuilder() {
   const [selectedPresetId, setSelectedPresetId] = useState<string>(documentPresets[0].id);
   const [activeTab, setActiveTab] = useState<'form' | 'code'>('form');
   const [templateHtml, setTemplateHtml] = useState<string>(documentPresets[0].templateHtml);
-  const [zoomScale, setZoomScale] = useState<number>(100);
+  const [zoomScale, setZoomScale] = useState<number>(75);
 
   // Form Field State
+  const [mounted, setMounted] = useState<boolean>(false);
   const [hospitalName, setHospitalName] = useState<string>('โรงพยาบาลวชิระภูเก็ต');
   const [departmentKey, setDepartmentKey] = useState<string>('SurgicalIcu');
   const [customDepartmentName, setCustomDepartmentName] = useState<string>('');
   const [contractNo, setContractNo] = useState<string>('วภ 104/2569');
-  const [deliveryDate, setDeliveryDate] = useState<string>(() => {
-    const today = new Date();
-    return today.toISOString().split('T')[0];
-  });
+  const [deliveryDate, setDeliveryDate] = useState<string>('2026-08-19');
   const [productCode, setProductCode] = useState<'A' | 'B' | 'C' | 'custom'>('B');
   const [customProductName, setCustomProductName] = useState<string>('');
   const [customProductOfficialName, setCustomProductOfficialName] = useState<string>('');
   const [serialsInput, setSerialsInput] = useState<string>('B010, B011');
   const [receiverName, setReceiverName] = useState<string>('พว.สุภาพร แก้วมณี');
   const [receiverPosition, setReceiverPosition] = useState<string>('พยาบาลวิชาชีพชำนาญการ (หัวหน้าหอผู้ป่วย)');
-  const [senderName, setSenderName] = useState<string>('นายชลิต ช่างเทคนิค');
-  const [senderCompany, setSenderCompany] = useState<string>('บริษัท แอพพิกซ์ อินโนเวชั่น จำกัด');
+  const [senderName, setSenderName] = useState<string>('');
+  const [senderCompany, setSenderCompany] = useState<string>('บริษัท อภิลักษณ์ เฮลท์แคร์ คอร์เปอร์เรชั่น');
   const [notes, setNotes] = useState<string>('ตรวจรับและทดสอบระบบเปิดเครื่อง หน้าจอ และระบบเครือข่ายเรียบร้อย');
 
   // DB vs Export Only Mode
@@ -53,11 +52,25 @@ export default function TemplateBuilder() {
   const [savedTemplates, setSavedTemplates] = useState<SavedTemplateItem[]>([]);
   const [newTemplateName, setNewTemplateName] = useState<string>('');
   const [showSaveModal, setShowSaveModal] = useState<boolean>(false);
+  const [presetDropdownOpen, setPresetDropdownOpen] = useState<boolean>(false);
 
   const printAreaRef = useRef<HTMLDivElement>(null);
+  const presetDropdownRef = useRef<HTMLDivElement>(null);
 
-  // Load saved templates from localStorage
+  // Close dropdown on outside click
   useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (presetDropdownRef.current && !presetDropdownRef.current.contains(event.target as Node)) {
+        setPresetDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Load saved templates from localStorage & set mounted
+  useEffect(() => {
+    setMounted(true);
     try {
       const stored = localStorage.getItem('inventory_custom_templates');
       if (stored) {
@@ -223,7 +236,7 @@ export default function TemplateBuilder() {
     showToast('ลบแม่แบบเรียบร้อยแล้ว', 'info');
   };
 
-  // Handle Print & Save Action
+  // Handle Main Action Execution
   const handleExecute = async () => {
     if (saveToDb) {
       // Validate
@@ -246,8 +259,8 @@ export default function TemplateBuilder() {
         if (res.success) {
           showToast(`บันทึกข้อมูล ${res.count} คันลง Database สำเร็จ! พร้อมเปิดหน้าพิมพ์...`, 'success');
           setTimeout(() => {
-            window.print();
-          }, 500);
+            printHtmlDocument(renderedHtml, 'ใบส่งสินค้าชั่วคราว');
+          }, 300);
         } else {
           showToast('เกิดข้อผิดพลาดในการบันทึกลง Database: ' + res.error, 'error');
         }
@@ -259,8 +272,8 @@ export default function TemplateBuilder() {
       }
     } else {
       // Export / Print only
-      showToast('กำลังเปิดหน้าพิมพ์เอกสาร (โหมดไม่บันทึก DB)...', 'info');
-      window.print();
+      showToast('กำลังเตรียมพิมพ์เอกสาร A4 สีขาวล้วน...', 'info');
+      printHtmlDocument(renderedHtml, 'ใบส่งสินค้าชั่วคราว');
     }
   };
 
@@ -290,34 +303,91 @@ export default function TemplateBuilder() {
           padding: 3rem;
           margin-bottom: 2rem;
           position: relative;
-          width: 100%;
+          width: 210mm;
+          min-height: 297mm;
+          max-width: 100%;
           box-sizing: border-box;
+          border: 1px solid #e2e8f0;
+          box-shadow: none !important;
+          border-radius: 0 !important;
         }
         .copy-label {
           position: absolute;
-          top: 1rem;
-          right: 1rem;
+          top: 1.5rem;
+          right: 1.5rem;
           font-size: 0.9rem;
           color: #666;
         }
         @media print {
+          * {
+            box-shadow: none !important;
+            text-shadow: none !important;
+            filter: none !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
           @page {
             size: A4;
             margin: 3rem; /* จัดเอกสารให้อยู่ตรงกลาง ซ้าย-ขวา-บน-ล่าง เท่ากัน */
           }
-          body {
-            margin: 0;
-            padding: 0;
-            background: #fff;
+          html, body {
+            margin: 0 !important;
+            padding: 0 !important;
+            background: #ffffff !important;
+            background-color: #ffffff !important;
+            color: #000000 !important;
+            font-family: 'Sarabun', 'TH Sarabun New', sans-serif;
+            width: 100% !important;
+            overflow: visible !important;
+          }
+          main,
+          .min-h-screen,
+          .max-w-7xl,
+          .max-w-5xl,
+          .grid,
+          .lg\\:col-span-7,
+          .print-area-wrapper,
+          .print-area-wrapper > div,
+          .print-transform-container {
+            display: block !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            min-width: 0 !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            border: none !important;
+            overflow: visible !important;
+            transform: none !important;
+            background: #ffffff !important;
+            background-color: #ffffff !important;
           }
           .document-style {
+            display: block !important;
             padding: 0 !important;
+            margin: 0 !important;
             margin-bottom: 0 !important;
             box-shadow: none !important;
+            border-radius: 0 !important;
+            border: none !important;
             width: 100% !important;
+            max-width: 100% !important;
+            min-width: 100% !important;
+            min-height: auto !important;
+            box-sizing: border-box !important;
+            background: #ffffff !important;
+            background-color: #ffffff !important;
+          }
+          .copy-label {
+            top: 0 !important;
+            right: 0 !important;
           }
           .page-break {
-            page-break-after: always;
+            page-break-after: always !important;
+            break-after: page !important;
+            height: 0 !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            border: none !important;
           }
           .no-print {
             display: none !important;
@@ -365,6 +435,7 @@ export default function TemplateBuilder() {
         }
         .document-style th {
           background-color: #f9f9f9;
+          text-align: left;
         }
         .document-style .signature-area {
           display: flex;
@@ -395,8 +466,9 @@ export default function TemplateBuilder() {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-white/10">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <span className="px-2.5 py-0.5 rounded-lg bg-[#F58220]/20 text-[#F58220] border border-[#F58220]/30 text-xs font-semibold">
-                ✨ Document & PDF Generator
+              <span className="px-2.5 py-0.5 rounded-lg bg-[#F58220]/20 text-[#F58220] border border-[#F58220]/30 text-xs font-semibold flex items-center gap-1">
+                <span>✨</span>
+                <span>Document & PDF Generator</span>
               </span>
               <span className="text-xs text-gray-400">สร้างเอกสารแบบกำหนดเอง</span>
             </div>
@@ -444,28 +516,134 @@ export default function TemplateBuilder() {
               </span>
             </div>
 
-            <select
-              value={selectedPresetId}
-              onChange={(e) => handlePresetSelect(e.target.value)}
-              className="w-full bg-white/5 border border-white/20 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-[#F58220] transition-colors"
-            >
-              <optgroup label="📋 แม่แบบทางการแพทย์">
-                {documentPresets.map((preset) => (
-                  <option key={preset.id} value={preset.id}>
-                    {preset.name}
-                  </option>
-                ))}
-              </optgroup>
-              {savedTemplates.length > 0 && (
-                <optgroup label="⭐ แม่แบบที่คุณบันทึกไว้">
-                  {savedTemplates.map((t) => (
-                    <option key={t.id} value={t.id}>
-                      {t.name} ({t.savedAt})
-                    </option>
-                  ))}
-                </optgroup>
+            {/* Custom Preset Dropdown */}
+            <div className="relative" ref={presetDropdownRef}>
+              <button
+                type="button"
+                onClick={() => setPresetDropdownOpen(!presetDropdownOpen)}
+                className="w-full bg-[#18181b] border border-white/20 hover:border-[#F58220] rounded-xl px-4 py-3 text-sm text-white focus:outline-none flex items-center justify-between transition-all cursor-pointer shadow-lg shadow-black/40"
+              >
+                <div className="flex items-center gap-2.5 text-left truncate">
+                  <span className="text-[#F58220]">📄</span>
+                  <span className="font-bold truncate">
+                    {documentPresets.find(p => p.id === selectedPresetId)?.name || savedTemplates.find(t => t.id === selectedPresetId)?.name || 'เลือกแม่แบบเอกสาร'}
+                  </span>
+                </div>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className={`text-gray-400 transition-transform duration-200 ${presetDropdownOpen ? 'rotate-180 text-[#F58220]' : ''}`}
+                >
+                  <polyline points="6 9 12 15 18 9" />
+                </svg>
+              </button>
+
+              {/* Floating Dropdown Menu */}
+              {presetDropdownOpen && (
+                <div className="absolute left-0 right-0 top-full mt-2 z-50 bg-[#18181b] border border-white/20 rounded-2xl p-2.5 shadow-2xl shadow-black/90 space-y-2 backdrop-blur-xl animate-in fade-in zoom-in-95 duration-150">
+                  <div>
+                    <div className="px-2.5 py-1 text-[11px] font-bold text-gray-400 uppercase tracking-wider">
+                      แม่แบบทางการแพทย์ (มาตรฐาน รพ.)
+                    </div>
+                    <div className="space-y-1 mt-1">
+                      {documentPresets.map((preset) => {
+                        const isSelected = selectedPresetId === preset.id;
+                        return (
+                          <div
+                            key={preset.id}
+                            onClick={() => {
+                              handlePresetSelect(preset.id);
+                              setPresetDropdownOpen(false);
+                            }}
+                            className={`p-2.5 rounded-xl cursor-pointer transition-all flex items-start justify-between gap-2 ${
+                              isSelected
+                                ? 'bg-[#F58220]/20 border border-[#F58220] text-white'
+                                : 'hover:bg-white/10 text-gray-200 border border-transparent'
+                            }`}
+                          >
+                            <div className="min-w-0 flex-1">
+                              <div className="font-bold text-xs flex items-center gap-1.5 text-white">
+                                <span className="text-[#F58220]">📄</span>
+                                <span className="truncate">{preset.name}</span>
+                              </div>
+                              <div className="text-[11px] text-gray-400 mt-1 font-normal line-clamp-2">
+                                {preset.description}
+                              </div>
+                            </div>
+                            {isSelected && (
+                              <span className="text-emerald-400 text-xs font-bold shrink-0 ml-1">
+                                ✓
+                              </span>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {savedTemplates.length > 0 && (
+                    <div className="pt-2 border-t border-white/10">
+                      <div className="px-2.5 py-1 text-[11px] font-bold text-gray-400 uppercase tracking-wider">
+                        แม่แบบส่วนตัวที่คุณบันทึกไว้
+                      </div>
+                      <div className="space-y-1 mt-1">
+                        {savedTemplates.map((t) => {
+                          const isSelected = selectedPresetId === t.id;
+                          return (
+                            <div
+                              key={t.id}
+                              onClick={() => {
+                                handleLoadSavedTemplate(t);
+                                setPresetDropdownOpen(false);
+                              }}
+                              className={`p-2 rounded-xl cursor-pointer transition-all flex items-center justify-between gap-2 ${
+                                isSelected
+                                  ? 'bg-amber-500/20 border border-amber-500 text-white'
+                                  : 'hover:bg-white/10 text-gray-200 border border-transparent'
+                              }`}
+                            >
+                              <div className="min-w-0 flex-1">
+                                <div className="font-bold text-xs truncate">⭐ {t.name}</div>
+                                <div className="text-[10px] text-gray-400">{t.savedAt}</div>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={(e) => handleDeleteSavedTemplate(t.id, e)}
+                                className="text-gray-400 hover:text-rose-400 p-1 text-xs shrink-0"
+                                title="ลบแม่แบบ"
+                              >
+                                ✕
+                              </button>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
               )}
-            </select>
+            </div>
+
+            <div className="flex items-center justify-between gap-2 pt-1">
+              <span className="text-[11px] text-gray-400">
+                สถานะ: {documentPresets.find(p => p.id === selectedPresetId)?.name || 'กำหนดเอง'}
+              </span>
+              <button
+                type="button"
+                onClick={() => handlePresetSelect(documentPresets[0].id)}
+                className="text-[11px] text-[#F58220] hover:underline flex items-center gap-1 font-semibold cursor-pointer"
+              >
+                <span>🔄</span>
+                <span>คืนค่ามาตรฐาน (A4 2 หน้า)</span>
+              </button>
+            </div>
 
             {/* Saved Templates Quick Bar */}
             {savedTemplates.length > 0 && (
@@ -545,12 +723,12 @@ export default function TemplateBuilder() {
                     <select
                       value={departmentKey}
                       onChange={(e) => setDepartmentKey(e.target.value)}
-                      className="w-full bg-black/80 border border-white/20 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-[#F58220]"
+                      className="w-full bg-[#18181b] border border-white/20 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-[#F58220]"
                     >
                       {departments.map(d => (
-                        <option key={d.key} value={d.key}>{d.nameTh}</option>
+                        <option key={d.key} value={d.key} className="bg-[#18181b] text-white py-1.5">{d.nameTh}</option>
                       ))}
-                      <option value="custom">✏️ ระบุชื่อแผนกเอง...</option>
+                      <option value="custom" className="bg-[#18181b] text-[#F58220] py-1.5">✏️ ระบุชื่อแผนกเอง...</option>
                     </select>
                   </div>
                 </div>
@@ -853,7 +1031,7 @@ export default function TemplateBuilder() {
         <div className="lg:col-span-7 flex flex-col items-center">
           
           {/* Zoom & Preview Controls */}
-          <div className="no-print w-full flex items-center justify-between p-3 bg-black/60 rounded-xl border border-white/10 backdrop-blur-xl mb-4 text-xs text-gray-300">
+          <div className="no-print w-full flex flex-wrap items-center justify-between gap-3 p-3 bg-black/60 rounded-xl border border-white/10 backdrop-blur-xl mb-4 text-xs text-gray-300">
             <div className="flex items-center gap-2">
               <span className="font-semibold text-white">ตัวอย่างเอกสาร A4 (WYSIWYG Live Preview)</span>
               <span className={`px-2 py-0.5 rounded text-[10px] ${saveToDb ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-blue-500/20 text-blue-300 border border-blue-500/30'}`}>
@@ -861,46 +1039,74 @@ export default function TemplateBuilder() {
               </span>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5">
               <span>ซูม:</span>
               <button
                 type="button"
-                onClick={() => setZoomScale(Math.max(60, zoomScale - 10))}
-                className="w-6 h-6 rounded bg-white/10 hover:bg-white/20 flex items-center justify-center font-bold"
+                onClick={() => setZoomScale(Math.max(50, zoomScale - 10))}
+                className="w-6 h-6 rounded bg-white/10 hover:bg-white/20 flex items-center justify-center font-bold text-white cursor-pointer"
+                title="ย่อขนาด"
               >
                 -
               </button>
-              <span className="w-10 text-center font-mono">{zoomScale}%</span>
+              <span className="w-10 text-center font-mono font-bold text-white">{zoomScale}%</span>
               <button
                 type="button"
                 onClick={() => setZoomScale(Math.min(130, zoomScale + 10))}
-                className="w-6 h-6 rounded bg-white/10 hover:bg-white/20 flex items-center justify-center font-bold"
+                className="w-6 h-6 rounded bg-white/10 hover:bg-white/20 flex items-center justify-center font-bold text-white cursor-pointer"
+                title="ขยายขนาด"
               >
                 +
               </button>
               <button
                 type="button"
-                onClick={() => setZoomScale(100)}
-                className="px-2 py-1 rounded bg-white/10 hover:bg-white/20 text-[10px]"
+                onClick={() => setZoomScale(75)}
+                className={`px-2 py-1 rounded text-[10px] font-semibold transition-all cursor-pointer ${
+                  zoomScale === 75 ? 'bg-[#F58220] text-white font-bold' : 'bg-white/10 hover:bg-white/20 text-gray-300'
+                }`}
               >
-                100%
+                พอดีจอ (75%)
+              </button>
+              <button
+                type="button"
+                onClick={() => setZoomScale(100)}
+                className={`px-2 py-1 rounded text-[10px] font-semibold transition-all cursor-pointer ${
+                  zoomScale === 100 ? 'bg-[#F58220] text-white font-bold' : 'bg-white/10 hover:bg-white/20 text-gray-300'
+                }`}
+              >
+                100% (ขนาดจริง)
               </button>
             </div>
           </div>
 
           {/* A4 Preview Container with Zoom Transform */}
-          <div className="w-full flex justify-center overflow-x-auto pb-8 print-area-wrapper">
+          <div className="w-full overflow-x-auto pb-8 print-area-wrapper flex justify-center">
             <div 
               style={{ 
-                transform: `scale(${zoomScale / 100})`, 
-                transformOrigin: 'top center',
-                transition: 'transform 0.15s ease-out'
+                width: `${210 * (zoomScale / 100)}mm`,
+                minWidth: `${210 * (zoomScale / 100)}mm`,
+                transition: 'width 0.15s ease-out',
+                display: 'flex',
+                justifyContent: 'center',
+                overflow: 'visible'
               }}
             >
               <div 
-                ref={printAreaRef}
-                dangerouslySetInnerHTML={{ __html: renderedHtml }}
-              />
+                className="print-transform-container"
+                style={{ 
+                  transform: `scale(${zoomScale / 100})`, 
+                  transformOrigin: 'top center',
+                  transition: 'transform 0.15s ease-out',
+                  width: '210mm',
+                  minWidth: '210mm',
+                  flexShrink: 0
+                }}
+              >
+                <div 
+                  ref={printAreaRef}
+                  dangerouslySetInnerHTML={{ __html: renderedHtml }}
+                />
+              </div>
             </div>
           </div>
         </div>

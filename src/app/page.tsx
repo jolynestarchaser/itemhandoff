@@ -155,7 +155,7 @@ export default function Home() {
       </div>
 
       {/* KPI Stats Bar (Fleet Target: A: 200, B: 100, C: 100 -> Total: 400) */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
         {/* Card 1: Total Delivered */}
         <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-md relative overflow-hidden">
           <span className="text-xs text-gray-400 font-medium">ส่งมอบแล้วรวม</span>
@@ -217,6 +217,35 @@ export default function Home() {
             สรุปและพิมพ์ทั้งหมด
           </p>
         </Link>
+      </div>
+
+      {/* Spare & Unassembled Stock Quick Banner */}
+      <div className="p-3 rounded-2xl bg-gradient-to-r from-amber-500/10 via-white/5 to-blue-500/10 border border-white/10 backdrop-blur-md mb-6 flex flex-wrap items-center justify-between gap-3 text-xs">
+        <div className="flex items-center gap-2.5">
+          <span className="text-base">📦</span>
+          <span className="font-semibold text-gray-300">รถสำรอง (Spare):</span>
+          <span className="font-mono text-blue-300 font-bold">A: {overallStats?.stock?.spareA ?? 10}</span>
+          <span className="text-gray-500">•</span>
+          <span className="font-mono text-emerald-300 font-bold">B: {overallStats?.stock?.spareB ?? 5}</span>
+          <span className="text-gray-500">•</span>
+          <span className="font-mono text-purple-300 font-bold">C: {overallStats?.stock?.spareC ?? 5}</span>
+          <span className="text-amber-300 font-bold">({overallStats?.stock?.totalSpare ?? 20} คัน)</span>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1.5">
+            <span className="text-gray-400">ชิ้นส่วน A ยังไม่ประกอบ:</span>
+            <span className="font-mono font-bold text-blue-300 bg-blue-500/20 px-2 py-0.5 rounded border border-blue-500/30">
+              {overallStats?.stock?.unassembledA ?? 100} คัน
+            </span>
+          </div>
+          <Link
+            href="/pending-vehicles"
+            className="text-[#F58220] hover:underline font-semibold text-[11px]"
+          >
+            ดูรายละเอียดรถทั้งหมด &rarr;
+          </Link>
+        </div>
       </div>
 
       {/* Search & Category Filter Section */}

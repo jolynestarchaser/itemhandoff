@@ -93,25 +93,52 @@
 }
 
 @media print {
-  /* ขนาดกระดาษ A4 คงที่ ไม่เพี้ยนตาม printer */
-  @page {
-    size: 210mm 297mm;
-    margin: 0;
+  /* ลบเงาและเอฟเฟกต์ตกแต่งทั้งหมดในการพิมพ์ */
+  *, *::before, *::after {
+    box-shadow: none !important;
+    text-shadow: none !important;
+    filter: none !important;
+    backdrop-filter: none !important;
   }
 
-  body {
-    background: white !important;
-    color: black !important;
-    margin: 0;
-    padding: 0;
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
+  /* ขนาดกระดาษ A4 คงที่ ไม่เพี้ยนตาม printer */
+  @page {
+    size: A4;
+    margin: 3rem;
+  }
+
+  html, body {
+    background: #ffffff !important;
+    background-color: #ffffff !important;
+    color: #000000 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
     font-size: 10pt;
+    overflow: visible !important;
   }
 
   /* ซ่อนส่วนที่ไม่ต้องพิมพ์ */
-  .no-print {
+  .no-print, nav, header {
     display: none !important;
+  }
+
+  /* ปลดล็อค Container และ Grid ทั้งหมดตอนพิมพ์ พร้อมลบพื้นหลังมืด */
+  main,
+  .max-w-7xl,
+  .max-w-6xl,
+  .max-w-5xl,
+  .grid,
+  [class*="col-span-"] {
+    max-width: 100% !important;
+    width: 100% !important;
+    overflow: visible !important;
+    display: block !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+    background-color: #ffffff !important;
   }
 
   /* แสดง print-only */

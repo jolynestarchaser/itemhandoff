@@ -1,6 +1,8 @@
 'use client';
 
+import React, { useRef } from 'react';
 import { HandoffRecord } from '@prisma/client';
+import { printHtmlDocument } from '@/lib/printUtils';
 
 interface DepartmentDeliveryNoteProps {
   department: string;
@@ -9,8 +11,14 @@ interface DepartmentDeliveryNoteProps {
 }
 
 export default function DepartmentDeliveryNote({ department, records, date }: DepartmentDeliveryNoteProps) {
+  const printContainerRef = useRef<HTMLDivElement>(null);
+
   const handlePrint = () => {
-    window.print();
+    if (printContainerRef.current) {
+      printHtmlDocument(printContainerRef.current.innerHTML, `ใบส่งสินค้าชั่วคราว - ${department}`);
+    } else {
+      window.print();
+    }
   };
 
   const displayDate = date ? new Date(date) : new Date();
@@ -103,6 +111,8 @@ export default function DepartmentDeliveryNote({ department, records, date }: De
           padding: 3rem;
           margin-bottom: 2rem;
           position: relative;
+          box-shadow: none !important;
+          border-radius: 0 !important;
         }
         .copy-label {
           position: absolute;
@@ -112,6 +122,11 @@ export default function DepartmentDeliveryNote({ department, records, date }: De
           color: #666;
         }
         @media print {
+          * {
+            box-shadow: none !important;
+            text-shadow: none !important;
+            filter: none !important;
+          }
           @page {
             size: A4;
             margin: 3rem; /* จัดเอกสารให้อยู่ตรงกลาง ซ้าย-ขวา-บน-ล่าง เท่ากัน */
@@ -120,14 +135,25 @@ export default function DepartmentDeliveryNote({ department, records, date }: De
             margin: 0;
             padding: 0;
             background: #fff;
+            font-family: 'Sarabun', 'TH Sarabun New', sans-serif;
+            color: #000;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
           }
           .document-style {
-            padding: 0;
-            margin-bottom: 0;
-            box-shadow: none;
+            padding: 0 !important;
+            margin-bottom: 0 !important;
+            box-shadow: none !important;
+            border-radius: 0 !important;
+            border: none !important;
+          }
+          .copy-label {
+            top: 0 !important;
+            right: 0 !important;
           }
           .page-break {
             page-break-after: always;
+            break-after: page;
           }
         }
         .document-style h1 {
@@ -205,7 +231,7 @@ export default function DepartmentDeliveryNote({ department, records, date }: De
         </button>
       </div>
 
-      <div className="print-only-wrapper">
+      <div ref={printContainerRef} className="print-only-wrapper">
         <NotePage copyLabel="ต้นฉบับ (ผู้ส่งสินค้า)" />
         <div className="page-break" />
         <NotePage copyLabel="สำเนา (ผู้รับสินค้า)" />

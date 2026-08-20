@@ -65,12 +65,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="th" className="dark">
+    <html lang="th" className="dark" suppressHydrationWarning>
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
       </head>
-      <body className={`${inter.className} antialiased min-h-screen bg-[#121212] text-white selection:bg-[#F58220]/30 selection:text-white`}>
+      <body suppressHydrationWarning className={`${inter.className} antialiased min-h-screen bg-[#121212] text-white selection:bg-[#F58220]/30 selection:text-white`}>
         <Navbar />
         <main className="max-w-5xl mx-auto pb-12 px-3 sm:px-4">
           {children}

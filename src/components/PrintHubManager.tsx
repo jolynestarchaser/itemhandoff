@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import { HandoffRecord } from '@prisma/client';
 import { departments as deptDict, departmentCategories, DepartmentCategory } from '@/lib/departments';
+import { printHtmlDocument } from '@/lib/printUtils';
 import Link from 'next/link';
 
 interface PrintHubManagerProps {
@@ -23,8 +24,14 @@ export default function PrintHubManager({ records }: PrintHubManagerProps) {
   // Single slip state
   const [selectedRecordId, setSelectedRecordId] = useState<string>('');
 
+  const printContainerRef = useRef<HTMLDivElement>(null);
+
   const handlePrint = () => {
-    window.print();
+    if (printContainerRef.current) {
+      printHtmlDocument(printContainerRef.current.innerHTML, 'ศูนย์พิมพ์เอกสารส่งมอบ');
+    } else {
+      window.print();
+    }
   };
 
   const formatDateStr = (date: Date | string) => {
@@ -119,31 +126,63 @@ export default function PrintHubManager({ records }: PrintHubManagerProps) {
           padding: 3rem;
           margin-bottom: 2rem;
           position: relative;
+          width: 100%;
+          box-sizing: border-box;
+          box-shadow: none !important;
+          border-radius: 0 !important;
         }
         .copy-label {
           position: absolute;
-          top: 1rem;
-          right: 1rem;
+          top: 1.5rem;
+          right: 1.5rem;
           font-size: 0.9rem;
           color: #666;
         }
         @media print {
+          * {
+            box-shadow: none !important;
+            text-shadow: none !important;
+            filter: none !important;
+          }
           @page {
             size: A4;
             margin: 3rem; /* จัดเอกสารให้อยู่ตรงกลาง ซ้าย-ขวา-บน-ล่าง เท่ากัน */
           }
-          body {
-            margin: 0;
-            padding: 0;
-            background: #fff;
+          html, body {
+            margin: 0 !important;
+            padding: 0 !important;
+            background: #ffffff !important;
+            background-color: #ffffff !important;
+            color: #000000 !important;
+            font-family: 'Sarabun', 'TH Sarabun New', sans-serif;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+          }
+          main,
+          .max-w-7xl,
+          .max-w-6xl,
+          .max-w-5xl,
+          .grid,
+          .flex {
+            background: #ffffff !important;
+            background-color: #ffffff !important;
           }
           .document-style {
-            padding: 0;
-            margin-bottom: 0;
-            box-shadow: none;
+            padding: 0 !important;
+            margin-bottom: 0 !important;
+            box-shadow: none !important;
+            border-radius: 0 !important;
+            border: none !important;
+            background: #ffffff !important;
+            background-color: #ffffff !important;
+          }
+          .copy-label {
+            top: 0 !important;
+            right: 0 !important;
           }
           .page-break {
             page-break-after: always;
+            break-after: page;
           }
           .no-print {
             display: none !important;
@@ -191,6 +230,7 @@ export default function PrintHubManager({ records }: PrintHubManagerProps) {
         }
         .document-style th {
           background-color: #f9f9f9;
+          text-align: left;
         }
         .document-style .signature-area {
           display: flex;
@@ -522,7 +562,7 @@ export default function PrintHubManager({ records }: PrintHubManagerProps) {
       </div>
 
       {/* 4. Documents Print Area */}
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 pt-8">
+      <div ref={printContainerRef} className="max-w-5xl mx-auto px-4 sm:px-6 pt-8">
         
         {filteredRecords.length === 0 ? (
           <div className="no-print p-12 text-center border border-white/10 rounded-2xl bg-white/5 space-y-3">
@@ -537,7 +577,7 @@ export default function PrintHubManager({ records }: PrintHubManagerProps) {
             {/* VIEW 1: Department Delivery Notes (2 Pages per Dept: Original + Copy) */}
             {docType === 'dept_delivery' && (
               <div>
-                {deptGrouped.map((deptItem) => {
+                {deptGrouped.map((deptItem, deptIndex) => {
                   const groupedByProduct: Record<string, string[]> = {};
                   deptItem.records.forEach(r => {
                     if (!groupedByProduct[r.productName]) groupedByProduct[r.productName] = [];
@@ -550,6 +590,8 @@ export default function PrintHubManager({ records }: PrintHubManagerProps) {
                     month: 'long',
                     day: 'numeric',
                   });
+
+                  const isLastDept = deptIndex === deptGrouped.length - 1;
 
                   const renderSlip = (copyLabel: string) => (
                     <div key={`${deptItem.key}-${copyLabel}`} className="document-style">
@@ -570,8 +612,8 @@ export default function PrintHubManager({ records }: PrintHubManagerProps) {
                       <table>
                         <thead>
                           <tr>
-                            <th style={{ width: '55%' }}>ชื่อสินค้า</th>
-                            <th style={{ width: '30%' }}>Serial Number</th>
+                            <th>ชื่อสินค้า</th>
+                            <th>Serial Number</th>
                             <th style={{ width: '15%', textAlign: 'center' }}>จำนวน</th>
                           </tr>
                         </thead>
@@ -589,7 +631,8 @@ export default function PrintHubManager({ records }: PrintHubManagerProps) {
                       <div className="signature-area">
                         <div className="signature-box">
                           <div className="signature-title">ผู้รับสินค้า</div>
-                          <div>โรงพยาบาลวชิระภูเก็ต</div>
+                          <div>{deptItem.nameTh}</div>
+                          <br />
                           <div style={{ marginTop: '1rem' }}>ลายมือชื่อ</div>
                           <div className="signature-line"></div>
                           <div>ชื่อ</div>
@@ -598,7 +641,7 @@ export default function PrintHubManager({ records }: PrintHubManagerProps) {
 
                         <div className="signature-box">
                           <div className="signature-title">ผู้ส่งสินค้า</div>
-                          <div>บริษัท แอพพิกซ์ อินโนเวชั่น จำกัด</div>
+                          <div>บริษัท อภิลักษณ์ เฮลท์แคร์ คอร์เปอร์เรชั่น</div>
                           <div style={{ marginTop: '1rem' }}>ลายมือชื่อ</div>
                           <div className="signature-line"></div>
                           <div>ชื่อ</div>
@@ -610,8 +653,10 @@ export default function PrintHubManager({ records }: PrintHubManagerProps) {
 
                   return (
                     <div key={deptItem.key} className="mb-8">
-                      {renderSlip('ต้นฉบับ')}
-                      {renderSlip('สำเนา')}
+                      {renderSlip('ต้นฉบับ (ผู้ส่งสินค้า)')}
+                      <div className="page-break" />
+                      {renderSlip('สำเนา (ผู้รับสินค้า)')}
+                      {!isLastDept && <div className="page-break" />}
                     </div>
                   );
                 })}
@@ -703,7 +748,7 @@ export default function PrintHubManager({ records }: PrintHubManagerProps) {
             {/* VIEW 3: Daily Batch Notes */}
             {docType === 'daily_batch' && (
               <div>
-                {uniqueDates.map(dateStr => {
+                {uniqueDates.map((dateStr, dateIndex) => {
                   const dayRecords = filteredRecords.filter(r => formatDateStr(r.handoffDate || r.createdAt) === dateStr);
                   if (dayRecords.length === 0) return null;
 
@@ -713,82 +758,95 @@ export default function PrintHubManager({ records }: PrintHubManagerProps) {
                     day: 'numeric',
                   });
 
+                  const dayDepts: Record<string, HandoffRecord[]> = {};
+                  dayRecords.forEach(r => {
+                    if (!dayDepts[r.department]) dayDepts[r.department] = [];
+                    dayDepts[r.department].push(r);
+                  });
+
+                  const deptKeys = Object.keys(dayDepts);
+
                   return (
                     <div key={dateStr} className="mb-12">
                       <div className="no-print bg-[#F58220]/20 border border-[#F58220]/30 rounded-xl p-3 mb-4 text-[#F58220] font-bold text-sm">
-                        📅 ชุดเอกสารประจำวันที่ {displayDate} (พบ {dayRecords.length} คัน)
+                        📅 ชุดเอกสารประจำวันที่ {displayDate} (พบ {dayRecords.length} คัน ใน {deptKeys.length} แผนก รวม {deptKeys.length * 2} หน้า: ต้นฉบับ + สำเนา)
                       </div>
 
-                      {(() => {
-                        const dayDepts: Record<string, HandoffRecord[]> = {};
-                        dayRecords.forEach(r => {
-                          if (!dayDepts[r.department]) dayDepts[r.department] = [];
-                          dayDepts[r.department].push(r);
+                      {deptKeys.map((deptKey, dIdx) => {
+                        const thaiName = deptDict.find(d => d.key === deptKey)?.nameTh || deptKey;
+                        const recs = dayDepts[deptKey];
+                        const groupedByProduct: Record<string, string[]> = {};
+                        recs.forEach(r => {
+                          if (!groupedByProduct[r.productName]) groupedByProduct[r.productName] = [];
+                          groupedByProduct[r.productName].push(r.productId);
                         });
 
-                        return Object.keys(dayDepts).map(deptKey => {
-                          const thaiName = deptDict.find(d => d.key === deptKey)?.nameTh || deptKey;
-                          const recs = dayDepts[deptKey];
-                          const groupedByProduct: Record<string, string[]> = {};
-                          recs.forEach(r => {
-                            if (!groupedByProduct[r.productName]) groupedByProduct[r.productName] = [];
-                            groupedByProduct[r.productName].push(r.productId);
-                          });
+                        const isLastInDate = dIdx === deptKeys.length - 1;
+                        const isLastOverall = dateIndex === uniqueDates.length - 1 && isLastInDate;
 
-                          return (
-                            <div key={deptKey} className="document-style mb-6">
-                              <div className="copy-label">ต้นฉบับ</div>
-                              <h1>ใบส่งสินค้าชั่วคราว</h1>
-                              <div className="header-info">
-                                <div className="info-row">
-                                  <div className="info-label">วันที่ส่ง</div>
-                                  <div className="info-dots">{displayDate}</div>
-                                </div>
-                                <div className="info-row">
-                                  <div className="info-label">แผนก</div>
-                                  <div className="info-dots">{thaiName}</div>
-                                </div>
+                        const renderDaySlip = (copyLabel: string) => (
+                          <div key={`${deptKey}-${copyLabel}`} className="document-style mb-6">
+                            <div className="copy-label">{copyLabel}</div>
+                            <h1>ใบส่งสินค้าชั่วคราว</h1>
+                            <div className="header-info">
+                              <div className="info-row">
+                                <div className="info-label">วันที่ส่ง</div>
+                                <div className="info-dots">{displayDate}</div>
                               </div>
-                              <table>
-                                <thead>
-                                  <tr>
-                                    <th style={{ width: '55%' }}>ชื่อสินค้า</th>
-                                    <th style={{ width: '30%' }}>Serial Number</th>
-                                    <th style={{ width: '15%', textAlign: 'center' }}>จำนวน</th>
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  {Object.entries(groupedByProduct).map(([pName, serials]) => (
-                                    <tr key={pName}>
-                                      <td>{pName}</td>
-                                      <td>{serials.join(', ')}</td>
-                                      <td style={{ textAlign: 'center' }}>{serials.length}</td>
-                                    </tr>
-                                  ))}
-                                </tbody>
-                              </table>
-                              <div className="signature-area">
-                                <div className="signature-box">
-                                  <div className="signature-title">ผู้รับสินค้า</div>
-                                  <div>โรงพยาบาลวชิระภูเก็ต</div>
-                                  <div style={{ marginTop: '1rem' }}>ลายมือชื่อ</div>
-                                  <div className="signature-line"></div>
-                                  <div>ชื่อ</div>
-                                  <div className="signature-line"></div>
-                                </div>
-                                <div className="signature-box">
-                                  <div className="signature-title">ผู้ส่งสินค้า</div>
-                                  <div>บริษัท แอพพิกซ์ อินโนเวชั่น จำกัด</div>
-                                  <div style={{ marginTop: '1rem' }}>ลายมือชื่อ</div>
-                                  <div className="signature-line"></div>
-                                  <div>ชื่อ</div>
-                                  <div className="signature-line"></div>
-                                </div>
+                              <div className="info-row">
+                                <div className="info-label">แผนก</div>
+                                <div className="info-dots">{thaiName}</div>
                               </div>
                             </div>
-                          );
-                        });
-                      })()}
+                            <table>
+                              <thead>
+                                <tr>
+                                  <th>ชื่อสินค้า</th>
+                                  <th>Serial Number</th>
+                                  <th style={{ width: '15%', textAlign: 'center' }}>จำนวน</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {Object.entries(groupedByProduct).map(([pName, serials]) => (
+                                  <tr key={pName}>
+                                    <td>{pName}</td>
+                                    <td>{serials.join(', ')}</td>
+                                    <td style={{ textAlign: 'center' }}>{serials.length}</td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                            <div className="signature-area">
+                              <div className="signature-box">
+                                <div className="signature-title">ผู้รับสินค้า</div>
+                                <div>{thaiName}</div>
+                                <br />
+                                <div style={{ marginTop: '1rem' }}>ลายมือชื่อ</div>
+                                <div className="signature-line"></div>
+                                <div>ชื่อ</div>
+                                <div className="signature-line"></div>
+                              </div>
+                              <div className="signature-box">
+                                <div className="signature-title">ผู้ส่งสินค้า</div>
+                                <div>บริษัท อภิลักษณ์ เฮลท์แคร์ คอร์เปอร์เรชั่น</div>
+                                <div style={{ marginTop: '1rem' }}>ลายมือชื่อ</div>
+                                <div className="signature-line"></div>
+                                <div>ชื่อ</div>
+                                <div className="signature-line"></div>
+                              </div>
+                            </div>
+                          </div>
+                        );
+
+                        return (
+                          <div key={deptKey}>
+                            {renderDaySlip('ต้นฉบับ (ผู้ส่งสินค้า)')}
+                            <div className="page-break" />
+                            {renderDaySlip('สำเนา (ผู้รับสินค้า)')}
+                            {!isLastOverall && <div className="page-break" />}
+                          </div>
+                        );
+                      })}
                     </div>
                   );
                 })}
@@ -807,6 +865,58 @@ export default function PrintHubManager({ records }: PrintHubManagerProps) {
                 day: 'numeric',
               });
 
+              const renderSingleSlip = (copyLabel: string) => (
+                <div className="document-style mb-6">
+                  <div className="copy-label">{copyLabel}</div>
+                  <h1>ใบส่งมอบอุปกรณ์รายชิ้น</h1>
+                  <div className="header-info">
+                    <div className="info-row">
+                      <div className="info-label">แผนกที่รับมอบ</div>
+                      <div className="info-dots">{thaiName}</div>
+                    </div>
+                    <div className="info-row">
+                      <div className="info-label">วันที่</div>
+                      <div className="info-dots">{dateFormatted}</div>
+                    </div>
+                  </div>
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>รายการ</th>
+                        <th>Serial Number</th>
+                        <th>QR Data</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td>{targetRecord.productName}</td>
+                        <td style={{ fontWeight: 'bold' }}>{targetRecord.productId}</td>
+                        <td style={{ fontSize: '0.85em' }}>{targetRecord.qrData}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                  <div className="signature-area">
+                    <div className="signature-box">
+                      <div className="signature-title">ผู้รับมอบ</div>
+                      <div>{thaiName}</div>
+                      <br />
+                      <div style={{ marginTop: '1rem' }}>ลายมือชื่อ</div>
+                      <div className="signature-line"></div>
+                      <div>ชื่อ</div>
+                      <div className="signature-line"></div>
+                    </div>
+                    <div className="signature-box">
+                      <div className="signature-title">ผู้ส่งมอบ</div>
+                      <div>บริษัท อภิลักษณ์ เฮลท์แคร์ คอร์เปอร์เรชั่น</div>
+                      <div style={{ marginTop: '1rem' }}>ลายมือชื่อ</div>
+                      <div className="signature-line"></div>
+                      <div>ชื่อ</div>
+                      <div className="signature-line"></div>
+                    </div>
+                  </div>
+                </div>
+              );
+
               return (
                 <div>
                   <div className="no-print mb-4 p-4 rounded-xl bg-black/60 border border-white/10 flex items-center gap-3">
@@ -824,54 +934,9 @@ export default function PrintHubManager({ records }: PrintHubManagerProps) {
                     </select>
                   </div>
 
-                  <div className="document-style">
-                    <div className="copy-label">สลิปส่งมอบรายคัน</div>
-                    <h1>ใบส่งมอบอุปกรณ์รายชิ้น</h1>
-                    <div className="header-info">
-                      <div className="info-row">
-                        <div className="info-label">แผนกที่รับมอบ</div>
-                        <div className="info-dots">{thaiName}</div>
-                      </div>
-                      <div className="info-row">
-                        <div className="info-label">วันที่</div>
-                        <div className="info-dots">{dateFormatted}</div>
-                      </div>
-                    </div>
-                    <table>
-                      <thead>
-                        <tr>
-                          <th>รายการ</th>
-                          <th>Serial Number</th>
-                          <th>QR Data</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        <tr>
-                          <td>{targetRecord.productName}</td>
-                          <td style={{ fontWeight: 'bold' }}>{targetRecord.productId}</td>
-                          <td style={{ fontSize: '0.85em' }}>{targetRecord.qrData}</td>
-                        </tr>
-                      </tbody>
-                    </table>
-                    <div className="signature-area">
-                      <div className="signature-box">
-                        <div className="signature-title">ผู้รับมอบ</div>
-                        <div>โรงพยาบาลวชิระภูเก็ต</div>
-                        <div style={{ marginTop: '1rem' }}>ลายมือชื่อ</div>
-                        <div className="signature-line"></div>
-                        <div>ชื่อ</div>
-                        <div className="signature-line"></div>
-                      </div>
-                      <div className="signature-box">
-                        <div className="signature-title">ผู้ส่งมอบ</div>
-                        <div>บริษัท แอพพิกซ์ อินโนเวชั่น จำกัด</div>
-                        <div style={{ marginTop: '1rem' }}>ลายมือชื่อ</div>
-                        <div className="signature-line"></div>
-                        <div>ชื่อ</div>
-                        <div className="signature-line"></div>
-                      </div>
-                    </div>
-                  </div>
+                  {renderSingleSlip('ต้นฉบับ (ผู้ส่งสินค้า)')}
+                  <div className="page-break" />
+                  {renderSingleSlip('สำเนา (ผู้รับสินค้า)')}
                 </div>
               );
             })()}
