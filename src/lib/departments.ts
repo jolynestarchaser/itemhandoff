@@ -24,9 +24,9 @@ export const departments: DepartmentItem[] = [
   { key: "Ros200Years1", nameTh: "รส.200 ปี 1", nameEn: "Ros 200 Years 1", category: "or_procedure" },
   { key: "Ros200Years2", nameTh: "รส.200 ปี 2", nameEn: "Ros 200 Years 2", category: "or_procedure" },
   { key: "UnderwaterMed", nameTh: "เวชศาสตร์ใต้น้ำ", nameEn: "UnderwaterMed", category: "or_procedure" },
-  { key: "OperatingRoom", nameTh: "OR", nameEn: "Operating Room (OR)", category: "or_procedure" },
-  { key: "Anesthesia", nameTh: "วิสัญญี", nameEn: "Anesthesia", category: "or_procedure" },
-  { key: "LaborRoom", nameTh: "LR", nameEn: "Labor Room (LR)", category: "or_procedure" },
+  { key: "OperatingRoom", nameTh: "ห้องผ่าตัด", nameEn: "Operating Room (OR)", category: "or_procedure" },
+  { key: "Anesthesia", nameTh: "ดมยา", nameEn: "Anesthesia", category: "or_procedure" },
+  { key: "LaborRoom", nameTh: "ห้องคลอด", nameEn: "Labor Room (LR)", category: "or_procedure" },
   { key: "EmergencyRoom", nameTh: "ER", nameEn: "Emergency Room (ER)", category: "or_procedure" },
   { key: "CathLab", nameTh: "Cath Lab", nameEn: "Cardiac Catheterization Laboratory (Cath Lab)", category: "or_procedure" },
   { key: "InjectionRoom", nameTh: "ฉีดยา", nameEn: "Injection Room", category: "or_procedure" },
@@ -92,12 +92,36 @@ export const departments: DepartmentItem[] = [
   { key: "Operations", nameTh: "ปฏิบัติการ", nameEn: "Operations", category: "support" }
 ];
 
+export function findDepartment(keyOrName: string): DepartmentItem | undefined {
+  if (!keyOrName) return undefined;
+  const q = keyOrName.trim().toLowerCase();
+  
+  // Specific aliases mapping
+  if (['laborroom', 'lr', 'ห้องคลอด'].includes(q)) {
+    return departments.find(d => d.key === 'LaborRoom');
+  }
+  if (['anesthesia', 'วิสัญญี', 'ดมยา'].includes(q)) {
+    return departments.find(d => d.key === 'Anesthesia');
+  }
+  if (['operatingroom', 'or', 'ห้องผ่าตัด'].includes(q)) {
+    return departments.find(d => d.key === 'OperatingRoom');
+  }
+
+  return departments.find(d => 
+    d.key.toLowerCase() === q || 
+    d.nameTh.toLowerCase() === q || 
+    d.nameEn.toLowerCase() === q
+  );
+}
+
 export function getDeptThaiName(key: string): string {
-  const match = departments.find(d => d.key === key);
+  if (!key) return '';
+  const match = findDepartment(key);
   return match ? match.nameTh : key;
 }
 
 export function getDeptEnName(key: string): string {
-  const match = departments.find(d => d.key === key);
+  if (!key) return '';
+  const match = findDepartment(key);
   return match ? match.nameEn : key;
 }

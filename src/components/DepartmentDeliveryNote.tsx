@@ -5,31 +5,39 @@ import { HandoffRecord } from '@prisma/client';
 import { printHtmlDocument } from '@/lib/printUtils';
 
 interface DepartmentDeliveryNoteProps {
-  department: string;
-  records: HandoffRecord[];
+  department?: string;
+  records?: HandoffRecord[];
   date?: string; // YYYY-MM-DD
+  isBlank?: boolean;
 }
 
-export default function DepartmentDeliveryNote({ department, records, date }: DepartmentDeliveryNoteProps) {
+export default function DepartmentDeliveryNote({ department = '', records = [], date, isBlank = false }: DepartmentDeliveryNoteProps) {
   const printContainerRef = useRef<HTMLDivElement>(null);
 
   const handlePrint = () => {
     if (printContainerRef.current) {
-      printHtmlDocument(printContainerRef.current.innerHTML, `ใบส่งสินค้าชั่วคราว - ${department}`);
+      printHtmlDocument(printContainerRef.current.innerHTML, `ใบส่งสินค้าชั่วคราว - ${department || 'แบบฟอร์มเปล่า'}`);
     } else {
       window.print();
     }
   };
 
-  const displayDate = date ? new Date(date) : new Date();
-  const formattedDate = displayDate.toLocaleDateString('th-TH', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  });
+  const hasRecords = records && records.length > 0 && !isBlank;
+
+  const formattedDate = date 
+    ? new Date(date).toLocaleDateString('th-TH', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+      }) 
+    : (isBlank ? '........................................................' : new Date().toLocaleDateString('th-TH', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+      }));
 
   // Group records by product name
-  const groupedRecords = records.reduce((acc, record) => {
+  const groupedRecords = (records || []).reduce((acc, record) => {
     if (!acc[record.productName]) {
       acc[record.productName] = [];
     }
@@ -50,30 +58,35 @@ export default function DepartmentDeliveryNote({ department, records, date }: De
         </div>
         <div className="info-row">
           <div className="info-label">แผนก</div>
-          <div className="info-dots">{department}</div>
+          <div className="info-dots">{department || '........................................................'}</div>
         </div>
       </div>
       
       <table>
         <thead>
           <tr>
-            <th>ชื่อสินค้า</th>
-            <th>Serial Number</th>
-            <th>จำนวน</th>
+            <th style={{ width: '48%' }}>ชื่อสินค้า</th>
+            <th style={{ width: '37%' }}>Serial Number</th>
+            <th style={{ width: '15%', textAlign: 'center' }}>จำนวน</th>
           </tr>
         </thead>
         <tbody>
-          {Object.entries(groupedRecords).map(([productName, serials]) => (
-            <tr key={productName}>
-              <td>{productName}</td>
-              <td>{serials.join(', ')}</td>
-              <td>{serials.length}</td>
-            </tr>
-          ))}
-          {Object.keys(groupedRecords).length === 0 && (
-            <tr>
-              <td colSpan={3} style={{ textAlign: 'center', padding: '2rem' }}>ไม่มีรายการสินค้า</td>
-            </tr>
+          {hasRecords ? (
+            Object.entries(groupedRecords).map(([productName, serials]) => (
+              <tr key={productName}>
+                <td>{productName}</td>
+                <td>{serials.join(', ')}</td>
+                <td style={{ textAlign: 'center' }}>{serials.length}</td>
+              </tr>
+            ))
+          ) : (
+            Array.from({ length: 6 }).map((_, i) => (
+              <tr key={i} style={{ height: '38px' }}>
+                <td>&nbsp;</td>
+                <td>&nbsp;</td>
+                <td style={{ textAlign: 'center' }}>&nbsp;</td>
+              </tr>
+            ))
           )}
         </tbody>
       </table>
@@ -81,7 +94,7 @@ export default function DepartmentDeliveryNote({ department, records, date }: De
       <div className="signature-area">
         <div className="signature-box">
           <div className="signature-title">ผู้รับสินค้า</div>
-          <div>{department}</div>
+          <div>{department || '........................................................'}</div>
           <br></br>
           <div style={{ marginTop: '1rem' }}>ลายมือชื่อ</div>
           <div className="signature-line"></div>

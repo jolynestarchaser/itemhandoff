@@ -148,6 +148,172 @@ export const documentPresets: DocumentPreset[] = [
 `.trim(),
   },
   {
+    id: 'blank-hospital-delivery-note',
+    name: 'ใบส่งสินค้าชั่วคราว (แบบฟอร์มเปล่าตามแบบพิมพ์)',
+    description: 'แบบฟอร์มเปล่า 2 หน้า (ต้นฉบับ + สำเนา) เค้าโครงเดียวกับที่เคยพิมพ์ พร้อมตารางว่าง 6 แถวสำหรับเขียนมือหน้างาน',
+    category: 'delivery',
+    defaultTitle: 'ใบส่งสินค้าชั่วคราว',
+    templateHtml: `
+<div class="document-style">
+  <div class="copy-label">ต้นฉบับ (ผู้ส่งสินค้า)</div>
+  <h1>ใบส่งสินค้าชั่วคราว</h1>
+  
+  <div class="header-info">
+    <div class="info-row">
+      <div class="info-label">วันที่ส่ง</div>
+      <div class="info-dots">{{deliveryDate}}</div>
+    </div>
+    <div class="info-row">
+      <div class="info-label">แผนก</div>
+      <div class="info-dots">{{departmentName}}</div>
+    </div>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th style="width: 48%;">ชื่อสินค้า</th>
+        <th style="width: 37%;">Serial Number</th>
+        <th style="width: 15%; text-align: center;">จำนวน</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr style="height: 38px;">
+        <td>&nbsp;</td>
+        <td>&nbsp;</td>
+        <td style="text-align: center;">&nbsp;</td>
+      </tr>
+      <tr style="height: 38px;">
+        <td>&nbsp;</td>
+        <td>&nbsp;</td>
+        <td style="text-align: center;">&nbsp;</td>
+      </tr>
+      <tr style="height: 38px;">
+        <td>&nbsp;</td>
+        <td>&nbsp;</td>
+        <td style="text-align: center;">&nbsp;</td>
+      </tr>
+      <tr style="height: 38px;">
+        <td>&nbsp;</td>
+        <td>&nbsp;</td>
+        <td style="text-align: center;">&nbsp;</td>
+      </tr>
+      <tr style="height: 38px;">
+        <td>&nbsp;</td>
+        <td>&nbsp;</td>
+        <td style="text-align: center;">&nbsp;</td>
+      </tr>
+      <tr style="height: 38px;">
+        <td>&nbsp;</td>
+        <td>&nbsp;</td>
+        <td style="text-align: center;">&nbsp;</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="signature-area">
+    <div class="signature-box">
+      <div class="signature-title">ผู้รับสินค้า</div>
+      <div>{{departmentName}}</div>
+      <br />
+      <div style="margin-top: 1rem;">ลายมือชื่อ</div>
+      <div class="signature-line"></div>
+      <div>ชื่อ</div>
+      <div class="signature-line"></div>
+    </div>
+    <div class="signature-box">
+      <div class="signature-title">ผู้ส่งสินค้า</div>
+      <div>{{senderCompany}}</div>
+      <div style="margin-top: 1rem;">ลายมือชื่อ</div>
+      <div class="signature-line"></div>
+      <div>ชื่อ</div>
+      <div class="signature-line"></div>
+    </div>
+  </div>
+</div>
+
+<div class="page-break"></div>
+
+<div class="document-style">
+  <div class="copy-label">สำเนา (ผู้รับสินค้า)</div>
+  <h1>ใบส่งสินค้าชั่วคราว</h1>
+  
+  <div class="header-info">
+    <div class="info-row">
+      <div class="info-label">วันที่ส่ง</div>
+      <div class="info-dots">{{deliveryDate}}</div>
+    </div>
+    <div class="info-row">
+      <div class="info-label">แผนก</div>
+      <div class="info-dots">{{departmentName}}</div>
+    </div>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th style="width: 48%;">ชื่อสินค้า</th>
+        <th style="width: 37%;">Serial Number</th>
+        <th style="width: 15%; text-align: center;">จำนวน</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr style="height: 38px;">
+        <td>&nbsp;</td>
+        <td>&nbsp;</td>
+        <td style="text-align: center;">&nbsp;</td>
+      </tr>
+      <tr style="height: 38px;">
+        <td>&nbsp;</td>
+        <td>&nbsp;</td>
+        <td style="text-align: center;">&nbsp;</td>
+      </tr>
+      <tr style="height: 38px;">
+        <td>&nbsp;</td>
+        <td>&nbsp;</td>
+        <td style="text-align: center;">&nbsp;</td>
+      </tr>
+      <tr style="height: 38px;">
+        <td>&nbsp;</td>
+        <td>&nbsp;</td>
+        <td style="text-align: center;">&nbsp;</td>
+      </tr>
+      <tr style="height: 38px;">
+        <td>&nbsp;</td>
+        <td>&nbsp;</td>
+        <td style="text-align: center;">&nbsp;</td>
+      </tr>
+      <tr style="height: 38px;">
+        <td>&nbsp;</td>
+        <td>&nbsp;</td>
+        <td style="text-align: center;">&nbsp;</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="signature-area">
+    <div class="signature-box">
+      <div class="signature-title">ผู้รับสินค้า</div>
+      <div>{{departmentName}}</div>
+      <br />
+      <div style="margin-top: 1rem;">ลายมือชื่อ</div>
+      <div class="signature-line"></div>
+      <div>ชื่อ</div>
+      <div class="signature-line"></div>
+    </div>
+    <div class="signature-box">
+      <div class="signature-title">ผู้ส่งสินค้า</div>
+      <div>{{senderCompany}}</div>
+      <div style="margin-top: 1rem;">ลายมือชื่อ</div>
+      <div class="signature-line"></div>
+      <div>ชื่อ</div>
+      <div class="signature-line"></div>
+    </div>
+  </div>
+</div>
+`.trim(),
+  },
+  {
     id: 'inspection-certificate',
     name: 'ใบตรวจรับพัสดุ / ครุภัณฑ์ทางการแพทย์',
     description: 'เอกสารตรวจรับความสมบูรณ์ของอุปกรณ์ และลงชื่อคณะกรรมการตรวจรับ',

@@ -83,7 +83,7 @@ export default function TemplateBuilder() {
 
   // Compute Active Department Thai Name
   const currentDeptThaiName = useMemo(() => {
-    if (departmentKey === 'custom') return customDepartmentName || 'หน่วยงานทั่วไป';
+    if (departmentKey === 'custom') return customDepartmentName || '........................................................';
     const found = departments.find(d => d.key === departmentKey);
     return found ? found.nameTh : departmentKey;
   }, [departmentKey, customDepartmentName]);

@@ -12,7 +12,16 @@ interface PrintHubManagerProps {
 
 export default function PrintHubManager({ records }: PrintHubManagerProps) {
   // Document Type Mode
-  const [docType, setDocType] = useState<'dept_delivery' | 'summary_matrix' | 'daily_batch' | 'single_slip'>('dept_delivery');
+  const [docType, setDocType] = useState<'dept_delivery' | 'summary_matrix' | 'daily_batch' | 'single_slip' | 'blank_delivery'>('dept_delivery');
+
+  // Blank Form Settings
+  const [blankDept, setBlankDept] = useState<string>('none');
+  const [blankDateMode, setBlankDateMode] = useState<'empty' | 'today' | 'custom'>('empty');
+  const [blankCustomDate, setBlankCustomDate] = useState<string>(() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  });
+  const [blankCopies, setBlankCopies] = useState<number>(1);
 
   // Filters
   const [selectedDept, setSelectedDept] = useState<string>('all');
@@ -28,7 +37,12 @@ export default function PrintHubManager({ records }: PrintHubManagerProps) {
 
   const handlePrint = () => {
     if (printContainerRef.current) {
-      printHtmlDocument(printContainerRef.current.innerHTML, 'ศูนย์พิมพ์เอกสารส่งมอบ');
+      let docTitle = 'ศูนย์พิมพ์เอกสารส่งมอบ';
+      if (docType === 'blank_delivery') {
+        const dName = blankDept !== 'none' ? (deptDict.find(d => d.key === blankDept)?.nameTh || blankDept) : '';
+        docTitle = dName ? `ใบส่งสินค้าชั่วคราว - แบบฟอร์มเปล่า (${dName})` : 'ใบส่งสินค้าชั่วคราว - แบบฟอร์มเปล่า';
+      }
+      printHtmlDocument(printContainerRef.current.innerHTML, docTitle);
     } else {
       window.print();
     }
@@ -107,12 +121,13 @@ export default function PrintHubManager({ records }: PrintHubManagerProps) {
 
   // Estimated Page Count calculation
   const estimatedPages = useMemo(() => {
+    if (docType === 'blank_delivery') return blankCopies * 2;
     if (docType === 'dept_delivery') return deptGrouped.length * 2; // ต้นฉบับ + สำเนา
     if (docType === 'summary_matrix') return 1;
     if (docType === 'daily_batch') return deptGrouped.length * 2;
     if (docType === 'single_slip') return 2;
     return 1;
-  }, [docType, deptGrouped]);
+  }, [docType, deptGrouped, blankCopies]);
 
   return (
     <div>
@@ -315,7 +330,7 @@ export default function PrintHubManager({ records }: PrintHubManagerProps) {
           <label className="block text-xs font-bold text-gray-300 uppercase tracking-wider mb-2">
             1. เลือกรูปแบบเอกสารที่ต้องการพิมพ์:
           </label>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
             
             {/* Type 1: Department Delivery Note */}
             <div
@@ -413,138 +428,240 @@ export default function PrintHubManager({ records }: PrintHubManagerProps) {
               </div>
             </div>
 
+            {/* Type 5: Blank Template Delivery Note */}
+            <div
+              onClick={() => setDocType('blank_delivery')}
+              className={`p-4 rounded-2xl border cursor-pointer transition-all flex flex-col justify-between ${
+                docType === 'blank_delivery'
+                  ? 'bg-[#F58220]/20 border-[#F58220] shadow-lg shadow-[#F58220]/20 scale-102'
+                  : 'bg-black/50 border-white/10 hover:bg-white/5'
+              }`}
+            >
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-xl">📝</span>
+                  <h3 className="text-sm font-bold text-white">แบบฟอร์มเปล่า</h3>
+                </div>
+                <p className="text-xs text-gray-400">
+                  ใบส่งสินค้าชั่วคราว 2 หน้า (ต้นฉบับ + สำเนา) แบบฟอร์มเปล่าสำหรับเขียนมือ
+                </p>
+              </div>
+              <div className="mt-3 flex items-center justify-between text-[11px]">
+                <span className="text-[#F58220] font-semibold">{blankCopies} ชุด</span>
+                <span className="text-gray-400">{blankCopies * 2} หน้า A4</span>
+              </div>
+            </div>
+
           </div>
         </div>
 
         {/* 2. Filter Controls Bar */}
         <div className="p-5 rounded-2xl bg-black/60 border border-white/10 backdrop-blur-xl shadow-xl space-y-4">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-gray-300 uppercase tracking-wider">
-              2. ตัวกรองข้อมูล (Filters):
-            </span>
-            <button
-              onClick={() => {
-                setSelectedDept('all');
-                setSelectedCategory('all');
-                setSelectedDate('all');
-                setSelectedProductType('all');
-                setSearchQuery('');
-              }}
-              className="text-xs text-[#F58220] hover:underline"
-            >
-              รีเซ็ตตัวกรองทั้งหมด
-            </button>
-          </div>
+          {docType === 'blank_delivery' ? (
+            <div className="space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <span className="text-xs font-bold text-gray-300 uppercase tracking-wider">
+                  2. ตั้งค่าแบบฟอร์มเปล่า (Blank Form Settings):
+                </span>
+                <span className="text-xs text-[#F58220] font-medium">
+                  * แบบฟอร์ม A4 2 หน้า (ต้นฉบับ + สำเนา) เค้าโครงตามแบบที่เคยพิมพ์ พร้อมตารางว่าง 6 แถวสำหรับเขียนมือ
+                </span>
+              </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
-            
-            {/* Filter by Date */}
-            <div>
-              <label className="block text-gray-300 font-semibold mb-1">📅 เลือกวันที่:</label>
-              <select
-                value={selectedDate}
-                onChange={(e) => setSelectedDate(e.target.value)}
-                className="w-full bg-white/5 border border-white/20 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-[#F58220]"
-              >
-                <option value="all">ทุกวันที่ (ทั้งหมด {records.length} รายการ)</option>
-                {uniqueDates.map(dStr => {
-                  const displayDate = new Date(dStr).toLocaleDateString('th-TH', {
-                    year: 'numeric',
-                    month: 'short',
-                    day: 'numeric',
-                  });
-                  return (
-                    <option key={dStr} value={dStr}>
-                      วันที่ {displayDate} ({records.filter(r => formatDateStr(r.handoffDate || r.createdAt) === dStr).length} คัน)
-                    </option>
-                  );
-                })}
-              </select>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                {/* Select Department */}
+                <div>
+                  <label className="block text-gray-300 font-semibold mb-1">🏢 แผนก:</label>
+                  <select
+                    value={blankDept}
+                    onChange={(e) => setBlankDept(e.target.value)}
+                    className="w-full bg-black/90 border border-white/20 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-[#F58220]"
+                  >
+                    <option value="none">-- เว้นว่างไว้เขียนด้วยมือ --</option>
+                    {deptDict.map(d => (
+                      <option key={d.key} value={d.key}>
+                        {d.nameTh} ({d.nameEn})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Delivery Date */}
+                <div>
+                  <label className="block text-gray-300 font-semibold mb-1">📅 วันที่ส่งมอบ:</label>
+                  <select
+                    value={blankDateMode}
+                    onChange={(e) => setBlankDateMode(e.target.value as any)}
+                    className="w-full bg-black/90 border border-white/20 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-[#F58220]"
+                  >
+                    <option value="empty">-- เว้นว่างไว้เขียนด้วยมือ --</option>
+                    <option value="today">ใส่วันที่ปัจจุบัน ({new Date().toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' })})</option>
+                    <option value="custom">กำหนดวันที่เอง...</option>
+                  </select>
+                  {blankDateMode === 'custom' && (
+                    <div className="mt-2">
+                      <input
+                        type="date"
+                        value={blankCustomDate}
+                        onChange={(e) => setBlankCustomDate(e.target.value)}
+                        className="w-full bg-black/90 border border-white/20 rounded-xl px-3 py-1.5 text-white text-xs focus:outline-none focus:border-[#F58220]"
+                      />
+                    </div>
+                  )}
+                </div>
+
+                {/* Number of Copies / Sets */}
+                <div>
+                  <label className="block text-gray-300 font-semibold mb-1">🖨️ จำนวนชุดที่ต้องการพิมพ์:</label>
+                  <select
+                    value={blankCopies}
+                    onChange={(e) => setBlankCopies(Number(e.target.value))}
+                    className="w-full bg-black/90 border border-white/20 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-[#F58220]"
+                  >
+                    <option value={1}>1 ชุด (2 หน้า: ต้นฉบับ + สำเนา)</option>
+                    <option value={2}>2 ชุด (4 หน้า A4)</option>
+                    <option value={3}>3 ชุด (6 หน้า A4)</option>
+                    <option value={5}>5 ชุด (10 หน้า A4)</option>
+                    <option value={10}>10 ชุด (20 หน้า A4)</option>
+                  </select>
+                </div>
+              </div>
             </div>
+          ) : (
+            <>
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-gray-300 uppercase tracking-wider">
+                  2. ตัวกรองข้อมูล (Filters):
+                </span>
+                <button
+                  onClick={() => {
+                    setSelectedDept('all');
+                    setSelectedCategory('all');
+                    setSelectedDate('all');
+                    setSelectedProductType('all');
+                    setSearchQuery('');
+                  }}
+                  className="text-xs text-[#F58220] hover:underline"
+                >
+                  รีเซ็ตตัวกรองทั้งหมด
+                </button>
+              </div>
 
-            {/* Filter by Department */}
-            <div>
-              <label className="block text-gray-300 font-semibold mb-1">🏥 เลือกแผนก:</label>
-              <select
-                value={selectedDept}
-                onChange={(e) => setSelectedDept(e.target.value)}
-                className="w-full bg-black/90 border border-white/20 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-[#F58220]"
-              >
-                <option value="all">ทุกแผนก ({deptGrouped.length} แผนก)</option>
-                {deptDict.map(d => (
-                  <option key={d.key} value={d.key}>{d.nameTh}</option>
-                ))}
-              </select>
-            </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+                
+                {/* Filter by Date */}
+                <div>
+                  <label className="block text-gray-300 font-semibold mb-1">📅 เลือกวันที่:</label>
+                  <select
+                    value={selectedDate}
+                    onChange={(e) => setSelectedDate(e.target.value)}
+                    className="w-full bg-white/5 border border-white/20 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-[#F58220]"
+                  >
+                    <option value="all">ทุกวันที่ (ทั้งหมด {records.length} รายการ)</option>
+                    {uniqueDates.map(dStr => {
+                      const displayDate = new Date(dStr).toLocaleDateString('th-TH', {
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric',
+                      });
+                      return (
+                        <option key={dStr} value={dStr}>
+                          วันที่ {displayDate} ({records.filter(r => formatDateStr(r.handoffDate || r.createdAt) === dStr).length} คัน)
+                        </option>
+                      );
+                    })}
+                  </select>
+                </div>
 
-            {/* Filter by Category */}
-            <div>
-              <label className="block text-gray-300 font-semibold mb-1">🏷️ กลุ่มแผนก:</label>
-              <select
-                value={selectedCategory}
-                onChange={(e) => setSelectedCategory(e.target.value)}
-                className="w-full bg-black/90 border border-white/20 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-[#F58220]"
-              >
-                <option value="all">ทุกกลุ่มแผนก</option>
-                <option value="ward">หอผู้ป่วยใน (IPD)</option>
-                <option value="opd">ผู้ป่วยนอก (OPD)</option>
-                <option value="icu">หอวิกฤต (ICU / CCU)</option>
-                <option value="or_procedure">ผ่าตัด / หัตถการ</option>
-                <option value="specialized">เฉพาะทาง / แม่และเด็ก</option>
-                <option value="support">สนับสนุน / สำนักงาน</option>
-              </select>
-            </div>
+                {/* Filter by Department */}
+                <div>
+                  <label className="block text-gray-300 font-semibold mb-1">🏥 เลือกแผนก:</label>
+                  <select
+                    value={selectedDept}
+                    onChange={(e) => setSelectedDept(e.target.value)}
+                    className="w-full bg-black/90 border border-white/20 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-[#F58220]"
+                  >
+                    <option value="all">ทุกแผนก ({deptGrouped.length} แผนก)</option>
+                    {deptDict.map(d => (
+                      <option key={d.key} value={d.key}>{d.nameTh}</option>
+                    ))}
+                  </select>
+                </div>
 
-            {/* Filter by Product Type */}
-            <div>
-              <label className="block text-gray-300 font-semibold mb-1">🚗 ประเภทรถเข็น:</label>
-              <select
-                value={selectedProductType}
-                onChange={(e) => setSelectedProductType(e.target.value as any)}
-                className="w-full bg-black/90 border border-white/20 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-[#F58220]"
-              >
-                <option value="all">ทั้งหมด (A, B, C)</option>
-                <option value="A">รหัส A: APIX Round A (รถ Notebook)</option>
-                <option value="B">รหัส B: APIX RX B (รถจัดยา 20 ช่อง)</option>
-                <option value="C">รหัส C: APIX Flow C (รถ Treatment เจาะเลือด)</option>
-              </select>
-            </div>
+                {/* Filter by Category */}
+                <div>
+                  <label className="block text-gray-300 font-semibold mb-1">🏷️ กลุ่มแผนก:</label>
+                  <select
+                    value={selectedCategory}
+                    onChange={(e) => setSelectedCategory(e.target.value)}
+                    className="w-full bg-black/90 border border-white/20 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-[#F58220]"
+                  >
+                    <option value="all">ทุกกลุ่มแผนก</option>
+                    <option value="ward">หอผู้ป่วยใน (IPD)</option>
+                    <option value="opd">ผู้ป่วยนอก (OPD)</option>
+                    <option value="icu">หอวิกฤต (ICU / CCU)</option>
+                    <option value="or_procedure">ผ่าตัด / หัตถการ</option>
+                    <option value="specialized">เฉพาะทาง / แม่และเด็ก</option>
+                    <option value="support">สนับสนุน / สำนักงาน</option>
+                  </select>
+                </div>
 
-          </div>
+                {/* Filter by Product Type */}
+                <div>
+                  <label className="block text-gray-300 font-semibold mb-1">🚗 ประเภทรถเข็น:</label>
+                  <select
+                    value={selectedProductType}
+                    onChange={(e) => setSelectedProductType(e.target.value as any)}
+                    className="w-full bg-black/90 border border-white/20 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-[#F58220]"
+                  >
+                    <option value="all">ทั้งหมด (A, B, C)</option>
+                    <option value="A">รหัส A: APIX Round A (รถ Notebook)</option>
+                    <option value="B">รหัส B: APIX RX B (รถจัดยา 20 ช่อง)</option>
+                    <option value="C">รหัส C: APIX Flow C (รถ Treatment เจาะเลือด)</option>
+                  </select>
+                </div>
 
-          {/* Quick Search */}
-          <div className="pt-2 border-t border-white/5 flex items-center gap-3">
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="🔍 ค้นหาด้วยชื่อแผนก หรือ รหัสรถ (เช่น SICU, B015, A001)..."
-              className="flex-1 bg-white/5 border border-white/20 rounded-xl px-4 py-2 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-[#F58220]"
-            />
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery('')}
-                className="px-3 py-2 bg-white/10 text-gray-300 text-xs rounded-xl"
-              >
-                ล้างคำค้น
-              </button>
-            )}
-          </div>
+              </div>
+
+              {/* Quick Search */}
+              <div className="pt-2 border-t border-white/5 flex items-center gap-3">
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="🔍 ค้นหาด้วยชื่อแผนก หรือ รหัสรถ (เช่น ห้องผ่าตัด, SICU, B015, A001)..."
+                  className="flex-1 bg-white/5 border border-white/20 rounded-xl px-4 py-2 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-[#F58220]"
+                />
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery('')}
+                    className="px-3 py-2 bg-white/10 text-gray-300 text-xs rounded-xl"
+                  >
+                    ล้างคำค้น
+                  </button>
+                )}
+              </div>
+            </>
+          )}
         </div>
 
         {/* 3. Summary Stats Banner */}
         <div className="p-4 rounded-xl bg-gradient-to-r from-[#F58220]/15 via-black/40 to-blue-500/15 border border-white/10 flex flex-wrap items-center justify-between gap-4 text-xs">
           <div className="flex items-center gap-4 flex-wrap">
             <div className="flex items-center gap-1.5 text-gray-300">
-              <span className="text-gray-400">พบข้อมูล:</span>
-              <span className="font-bold text-[#F58220] text-sm">{filteredRecords.length}</span>
-              <span>คัน</span>
+              <span className="text-gray-400">{docType === 'blank_delivery' ? 'โหมด:' : 'พบข้อมูล:'}</span>
+              <span className="font-bold text-[#F58220] text-sm">
+                {docType === 'blank_delivery' ? `${blankCopies} ชุดฟอร์มเปล่า` : `${filteredRecords.length} คัน`}
+              </span>
             </div>
             <div className="h-3 w-px bg-white/20" />
             <div className="flex items-center gap-1.5 text-gray-300">
-              <span className="text-gray-400">จำนวนแผนก:</span>
-              <span className="font-bold text-white text-sm">{deptGrouped.length}</span>
-              <span>แผนก</span>
+              <span className="text-gray-400">{docType === 'blank_delivery' ? 'แผนก:' : 'จำนวนแผนก:'}</span>
+              <span className="font-bold text-white text-sm">
+                {docType === 'blank_delivery' 
+                  ? (blankDept === 'none' ? 'เว้นว่างไว้เขียนมือ' : (deptDict.find(d => d.key === blankDept)?.nameTh || blankDept))
+                  : `${deptGrouped.length} แผนก`}
+              </span>
             </div>
             <div className="h-3 w-px bg-white/20" />
             <div className="flex items-center gap-1.5 text-gray-300">
@@ -564,7 +681,7 @@ export default function PrintHubManager({ records }: PrintHubManagerProps) {
       {/* 4. Documents Print Area */}
       <div ref={printContainerRef} className="max-w-5xl mx-auto px-4 sm:px-6 pt-8">
         
-        {filteredRecords.length === 0 ? (
+        {filteredRecords.length === 0 && docType !== 'blank_delivery' ? (
           <div className="no-print p-12 text-center border border-white/10 rounded-2xl bg-white/5 space-y-3">
             <span className="text-4xl">🔍</span>
             <h3 className="text-lg font-bold text-white">ไม่พบรายการเอกสารตามเงื่อนไขที่เลือก</h3>
@@ -940,6 +1057,91 @@ export default function PrintHubManager({ records }: PrintHubManagerProps) {
                 </div>
               );
             })()}
+          </div>
+        )}
+
+        {/* VIEW 5: Blank Template Delivery Note (2 Pages per set: Original + Copy) */}
+        {docType === 'blank_delivery' && (
+          <div>
+            {Array.from({ length: blankCopies }).map((_, setIndex) => {
+              const isLastSet = setIndex === blankCopies - 1;
+              const deptDisplay = blankDept === 'none' 
+                ? '........................................................' 
+                : (deptDict.find(d => d.key === blankDept)?.nameTh || blankDept);
+
+              const dateDisplay = blankDateMode === 'empty' 
+                ? '........................................................' 
+                : (blankDateMode === 'today' 
+                    ? new Date().toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' })
+                    : (blankCustomDate ? new Date(blankCustomDate).toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' }) : '........................................................'));
+
+              const renderBlankPage = (copyLabel: string, keySuffix: string) => (
+                <div key={`blank-${setIndex}-${keySuffix}`} className="document-style">
+                  <div className="copy-label">{copyLabel}</div>
+                  <h1>ใบส่งสินค้าชั่วคราว</h1>
+                  
+                  <div className="header-info">
+                    <div className="info-row">
+                      <div className="info-label">วันที่ส่ง</div>
+                      <div className="info-dots">{dateDisplay}</div>
+                    </div>
+                    <div className="info-row">
+                      <div className="info-label">แผนก</div>
+                      <div className="info-dots">{deptDisplay}</div>
+                    </div>
+                  </div>
+
+                  <table>
+                    <thead>
+                      <tr>
+                        <th style={{ width: '48%' }}>ชื่อสินค้า</th>
+                        <th style={{ width: '37%' }}>Serial Number</th>
+                        <th style={{ width: '15%', textAlign: 'center' }}>จำนวน</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {Array.from({ length: 6 }).map((__, rowIdx) => (
+                        <tr key={rowIdx} style={{ height: '38px' }}>
+                          <td>&nbsp;</td>
+                          <td>&nbsp;</td>
+                          <td style={{ textAlign: 'center' }}>&nbsp;</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+
+                  <div className="signature-area">
+                    <div className="signature-box">
+                      <div className="signature-title">ผู้รับสินค้า</div>
+                      <div>{deptDisplay}</div>
+                      <br />
+                      <div style={{ marginTop: '1rem' }}>ลายมือชื่อ</div>
+                      <div className="signature-line"></div>
+                      <div>ชื่อ</div>
+                      <div className="signature-line"></div>
+                    </div>
+
+                    <div className="signature-box">
+                      <div className="signature-title">ผู้ส่งสินค้า</div>
+                      <div>บริษัท อภิลักษณ์ เฮลท์แคร์ คอร์เปอร์เรชั่น</div>
+                      <div style={{ marginTop: '1rem' }}>ลายมือชื่อ</div>
+                      <div className="signature-line"></div>
+                      <div>ชื่อ</div>
+                      <div className="signature-line"></div>
+                    </div>
+                  </div>
+                </div>
+              );
+
+              return (
+                <React.Fragment key={`blank-set-${setIndex}`}>
+                  {renderBlankPage('ต้นฉบับ (ผู้ส่งสินค้า)', 'copy1')}
+                  <div className="page-break" />
+                  {renderBlankPage('สำเนา (ผู้รับสินค้า)', 'copy2')}
+                  {!isLastSet && <div className="page-break" />}
+                </React.Fragment>
+              );
+            })}
           </div>
         )}
 

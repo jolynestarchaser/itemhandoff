@@ -9,12 +9,12 @@ import DepartmentDeliveryNote from '@/components/DepartmentDeliveryNote';
 import InteractiveDatePicker from '@/components/InteractiveDatePicker';
 import { getRecordsByDepartment, deleteRecord, checkProductExistsGlobal, createHandoffRecord } from '@/lib/actions';
 import { HandoffRecord } from '@prisma/client';
-import { departments, departmentCategories } from '@/lib/departments';
+import { departments, departmentCategories, findDepartment } from '@/lib/departments';
 
 export default function DepartmentPage() {
   const params = useParams();
   const department = decodeURIComponent(params.name as string);
-  const departmentInfo = departments.find(d => d.key === department);
+  const departmentInfo = findDepartment(department);
   const departmentNameTh = departmentInfo ? departmentInfo.nameTh : department;
   const departmentNameEn = departmentInfo ? departmentInfo.nameEn : department;
   const categoryInfo = departmentCategories.find(c => c.id === departmentInfo?.category);
@@ -494,7 +494,7 @@ export default function DepartmentPage() {
             }`}
           >
             <span>📄</span>
-            <span>ใบส่งมอบ A4</span>
+            <span>ใบส่งมอบ A4 {dateFilteredRecords.length === 0 ? '(ฟอร์มเปล่า)' : ''}</span>
           </button>
         </div>
 
@@ -843,17 +843,16 @@ export default function DepartmentPage() {
       </div>
 
       {/* Print Delivery Note Document Section */}
-      {dateFilteredRecords.length > 0 && (
-        <div className={activeTab === 'print' ? 'block' : 'hidden print:block'}>
-          <div className="bg-white overflow-hidden print-content border border-gray-200 print:border-none print:shadow-none">
-            <DepartmentDeliveryNote
-              department={departmentNameTh}
-              records={dateFilteredRecords}
-              date={selectedDate}
-            />
-          </div>
+      <div className={activeTab === 'print' ? 'block' : 'hidden print:block'}>
+        <div className="bg-white overflow-hidden print-content border border-gray-200 print:border-none print:shadow-none">
+          <DepartmentDeliveryNote
+            department={departmentNameTh}
+            records={dateFilteredRecords}
+            date={selectedDate}
+            isBlank={dateFilteredRecords.length === 0}
+          />
         </div>
-      )}
+      </div>
 
       {/* Delete confirmation modal */}
       <DeleteConfirmModal
