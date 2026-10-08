@@ -80,6 +80,9 @@ export function printHtmlDocument(htmlContent: string, title: string = 'เอ�
               break-after: page;
               height: 0;
             }
+            .no-print {
+              display: none !important;
+            }
             .document-style h1 {
               font-size: 1.5em; /* ใช้ em สำหรับ Heading */
               text-align: center;

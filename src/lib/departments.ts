@@ -15,8 +15,8 @@ export const departmentCategories: { id: DepartmentCategory | 'all' | 'delivered
   { id: 'or_procedure', label: 'ผ่าตัด / หัตถการ' },
   { id: 'specialized', label: 'เฉพาะทาง / แม่และเด็ก' },
   { id: 'support', label: 'สนับสนุน / สำนักงาน' },
-  { id: 'delivered', label: '✅ ส่งมอบแล้ว' },
-  { id: 'pending', label: '⏳ ยังไม่มีรายการ' },
+  { id: 'delivered', label: 'ส่งมอบแล้ว' },
+  { id: 'pending', label: 'ยังไม่มีรายการ' },
 ];
 
 export const departments: DepartmentItem[] = [

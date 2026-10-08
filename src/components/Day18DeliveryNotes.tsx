@@ -247,7 +247,7 @@ export default function Day18DeliveryNotes({ records }: Day18DeliveryNotesProps)
               ใบส่งสินค้าชั่วคราว (ประจำวันที่ 18 สิงหาคม 2569)
             </h2>
             <p className="text-sm text-gray-400">
-              พบทั้งหมด <span className="text-[#F58220] font-bold">{qualifyingDepts.length}</span> แผนก รวม <span className="text-[#F58220] font-bold">{totalItems}</span> รายการ ({qualifyingDepts.length * 2} หน้า: ต้นฉบับ + สำเนา)
+              พบทั้งหมด <span className="text-brand-ink font-bold">{qualifyingDepts.length}</span> แผนก รวม <span className="text-brand-ink font-bold">{totalItems}</span> รายการ ({qualifyingDepts.length * 2} หน้า: ต้นฉบับ + สำเนา)
             </p>
           </div>
 

@@ -1,21 +1,24 @@
 import type { Metadata, Viewport } from 'next';
-import { Inter } from 'next/font/google';
+import { Sarabun } from 'next/font/google';
 import './globals.css';
 import Navbar from '@/components/Navbar';
 
-const inter = Inter({
-  subsets: ['latin'],
+const sarabun = Sarabun({
+  subsets: ['thai', 'latin'],
+  weight: ['400', '500', '600', '700', '800'],
   display: 'swap',
   preload: true,
   fallback: ['system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
 });
 
+const applySavedTheme = `try{var t=localStorage.getItem('theme');if(t==='dark'||t==='light')document.documentElement.dataset.theme=t}catch(e){}`;
+
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   maximumScale: 5,
-  themeColor: '#121212',
-  colorScheme: 'dark',
+  themeColor: '#F58220',
+  colorScheme: 'light dark',
 };
 
 export const metadata: Metadata = {
@@ -65,14 +68,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="th" className="dark" suppressHydrationWarning>
+    <html lang="th" data-theme="light" suppressHydrationWarning>
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <script dangerouslySetInnerHTML={{ __html: applySavedTheme }} />
       </head>
-      <body suppressHydrationWarning className={`${inter.className} antialiased min-h-screen bg-[#121212] text-white selection:bg-[#F58220]/30 selection:text-white`}>
+      <body suppressHydrationWarning className={`${sarabun.className} antialiased min-h-screen bg-background text-foreground selection:bg-[#F58220]/30`}>
         <Navbar />
-        <main className="max-w-5xl mx-auto pb-12 px-3 sm:px-4">
+        <main className="max-w-5xl mx-auto pb-24 sm:pb-12 px-3 sm:px-4">
           {children}
         </main>
       </body>

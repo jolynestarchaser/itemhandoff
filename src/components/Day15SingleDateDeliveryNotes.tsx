@@ -246,7 +246,7 @@ export default function Day15SingleDateDeliveryNotes({ records }: Day15SingleDat
               ใบส่งมอบชั่วคราว (แผนกที่มีเฉพาะวันที่ 15 กรกฎาคม 2569 วันเดียวเท่านั้น)
             </h2>
             <p className="text-sm text-gray-400">
-              พบทั้งหมด <span className="text-[#F58220] font-bold">{qualifyingDepts.length}</span> แผนก (รวม {qualifyingDepts.length * 2} หน้า: ต้นฉบับ + สำเนา)
+              พบทั้งหมด <span className="text-brand-ink font-bold">{qualifyingDepts.length}</span> แผนก (รวม {qualifyingDepts.length * 2} หน้า: ต้นฉบับ + สำเนา)
             </p>
           </div>
 

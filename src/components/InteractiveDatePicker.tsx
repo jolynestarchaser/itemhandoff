@@ -130,7 +130,7 @@ export default function InteractiveDatePicker({
           </div>
           <div className="text-left">
             <span className="block text-[10px] text-gray-400 font-semibold uppercase tracking-wider">วันที่ส่งมอบ (เลือกปฏิทิน)</span>
-            <span className="text-xs sm:text-sm font-bold text-white group-hover:text-[#F58220] transition-colors">
+            <span className="text-xs sm:text-sm font-bold text-white group-hover:text-brand-ink transition-colors">
               {displayFormattedDate()}
             </span>
           </div>
@@ -161,7 +161,7 @@ export default function InteractiveDatePicker({
 
       {/* Calendar Popover - Solid Background & High Z-Index */}
       {isOpen && (
-        <div className="fixed sm:absolute left-1/2 -translate-x-1/2 sm:translate-x-0 sm:left-0 top-24 sm:top-full mt-2 z-[100] w-[92vw] max-w-xs sm:w-80 p-4 bg-[#1c1c21] border border-white/20 rounded-2xl shadow-2xl shadow-black/90 animate-in fade-in zoom-in-95 duration-150">
+        <div className="fixed sm:absolute left-1/2 -translate-x-1/2 sm:translate-x-0 sm:left-0 top-24 sm:top-full mt-2 z-[100] w-[92vw] max-w-xs sm:w-80 p-4 bg-surface border border-white/20 rounded-2xl shadow-2xl shadow-black/90 fade-in zoom-in-95 duration-150">
           {/* Header Navigation */}
           <div className="flex items-center justify-between mb-3">
             <button
@@ -178,7 +178,7 @@ export default function InteractiveDatePicker({
 
             <div className="text-center font-bold text-white text-sm">
               <span>{thaiMonths[viewMonth]}</span>{' '}
-              <span className="text-[#F58220]">{viewYear + 543}</span>
+              <span className="text-brand-ink">{viewYear + 543}</span>
               <span className="text-xs text-gray-400 font-normal ml-1">({viewYear})</span>
             </div>
 
@@ -258,7 +258,7 @@ export default function InteractiveDatePicker({
               onClick={handleSetToday}
               className="px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-semibold transition-colors"
             >
-              📅 ไปที่วันนี้
+              ไปที่วันนี้
             </button>
 
             <button
@@ -276,7 +276,7 @@ export default function InteractiveDatePicker({
                   nativeInputRef.current.showPicker();
                 }
               }}
-              className="hidden sm:inline text-[#F58220] hover:underline text-[11px]"
+              className="hidden sm:inline text-brand-ink hover:underline text-[11px]"
             >
               ปฏิทินระบบ &rarr;
             </button>

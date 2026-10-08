@@ -65,9 +65,9 @@ export default function DepartmentDeliveryNote({ department = '', records = [], 
       <table>
         <thead>
           <tr>
-            <th style={{ width: '48%' }}>ชื่อสินค้า</th>
-            <th style={{ width: '37%' }}>Serial Number</th>
-            <th style={{ width: '15%', textAlign: 'center' }}>จำนวน</th>
+            <th style={hasRecords ? undefined : { width: '48%' }}>ชื่อสินค้า</th>
+            <th style={hasRecords ? undefined : { width: '37%' }}>Serial Number</th>
+            <th style={hasRecords ? undefined : { width: '15%', textAlign: 'center' }}>จำนวน</th>
           </tr>
         </thead>
         <tbody>
@@ -76,7 +76,7 @@ export default function DepartmentDeliveryNote({ department = '', records = [], 
               <tr key={productName}>
                 <td>{productName}</td>
                 <td>{serials.join(', ')}</td>
-                <td style={{ textAlign: 'center' }}>{serials.length}</td>
+                <td>{serials.length}</td>
               </tr>
             ))
           ) : (

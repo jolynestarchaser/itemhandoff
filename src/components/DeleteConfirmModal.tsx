@@ -1,5 +1,7 @@
 'use client';
 
+import { useModalDismiss } from '@/lib/useModalDismiss';
+
 interface DeleteConfirmModalProps {
   isOpen: boolean;
   productName: string;
@@ -17,18 +19,20 @@ export default function DeleteConfirmModal({
   onCancel,
   isDeleting = false,
 }: DeleteConfirmModalProps) {
+  const dialogRef = useModalDismiss<HTMLDivElement>(isOpen, onCancel);
+
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Overlay */}
       <div
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+        className="absolute inset-0 bg-black/60"
         onClick={onCancel}
       />
 
       {/* Modal */}
-      <div className="relative bg-[#1E1E1E] border border-white/10 rounded-2xl p-6 max-w-sm w-full shadow-2xl animate-in">
+      <div ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby="delete-confirm-title" className="relative bg-surface border border-white/10 rounded-2xl p-6 max-w-sm w-full shadow-2xl">
         {/* Icon */}
         <div className="flex justify-center mb-4">
           <div className="w-14 h-14 rounded-full bg-red-500/20 flex items-center justify-center">
@@ -38,7 +42,7 @@ export default function DeleteConfirmModal({
           </div>
         </div>
 
-        <h3 className="text-lg font-bold text-white text-center mb-2">
+        <h3 id="delete-confirm-title" className="text-lg font-bold text-white text-center mb-2">
           ยืนยันการลบสินค้า
         </h3>
 
@@ -51,8 +55,8 @@ export default function DeleteConfirmModal({
           <p className="text-gray-400 text-sm font-mono">{productId}</p>
         </div>
 
-        <p className="text-xs text-red-400 text-center mb-5">
-          การดำเนินการนี้ไม่สามารถย้อนกลับได้
+        <p className="text-xs text-gray-400 text-center mb-5">
+          กู้คืนได้ภายหลังจาก &quot;รายการที่ลบ&quot; ท้ายหน้าแผนก
         </p>
 
         {/* Buttons */}

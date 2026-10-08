@@ -290,13 +290,13 @@ export default function PrintHubManager({ records }: PrintHubManagerProps) {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-white/10">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <span className="px-2.5 py-0.5 rounded-lg bg-[#F58220]/20 text-[#F58220] border border-[#F58220]/30 text-xs font-semibold">
-                🖨️ Print Hub
+              <span className="px-2.5 py-0.5 rounded-lg bg-[#F58220]/20 text-brand-ink border border-[#F58220]/30 text-xs font-semibold">
+                Print Hub
               </span>
               <span className="text-xs text-gray-400">ศูนย์รวมเอกสารการพิมพ์</span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
-              ศูนย์รวม <span className="text-[#F58220]">การพิมพ์เอกสารทั้งหมด</span>
+              ศูนย์รวม <span className="text-brand-ink">การพิมพ์เอกสารทั้งหมด</span>
             </h1>
             <p className="text-sm text-gray-400 mt-1">
               เลือกแบบฟอร์ม กรองข้อมูลแผนก/วันที่ และสั่งพิมพ์เอกสารมาตรฐานโรงพยาบาลได้ในคลิกเดียว
@@ -308,7 +308,6 @@ export default function PrintHubManager({ records }: PrintHubManagerProps) {
               href="/template-builder"
               className="px-4 py-2.5 bg-white/10 hover:bg-white/15 text-white text-xs sm:text-sm font-semibold rounded-xl border border-white/20 transition-all flex items-center gap-2"
             >
-              <span>✨</span>
               <span>สร้าง Template PDF เอง</span>
             </Link>
 
@@ -343,7 +342,6 @@ export default function PrintHubManager({ records }: PrintHubManagerProps) {
             >
               <div>
                 <div className="flex items-center gap-2 mb-1">
-                  <span className="text-xl">📄</span>
                   <h3 className="text-sm font-bold text-white">ใบส่งสินค้าแยกแผนก</h3>
                 </div>
                 <p className="text-xs text-gray-400">
@@ -351,7 +349,7 @@ export default function PrintHubManager({ records }: PrintHubManagerProps) {
                 </p>
               </div>
               <div className="mt-3 flex items-center justify-between text-[11px]">
-                <span className="text-[#F58220] font-semibold">{deptGrouped.length} แผนก</span>
+                <span className="text-brand-ink font-semibold">{deptGrouped.length} แผนก</span>
                 <span className="text-gray-400">{deptGrouped.length * 2} หน้า A4</span>
               </div>
             </div>
@@ -367,7 +365,6 @@ export default function PrintHubManager({ records }: PrintHubManagerProps) {
             >
               <div>
                 <div className="flex items-center gap-2 mb-1">
-                  <span className="text-xl">📊</span>
                   <h3 className="text-sm font-bold text-white">ใบสรุปภาพรวม Matrix</h3>
                 </div>
                 <p className="text-xs text-gray-400">
@@ -375,7 +372,7 @@ export default function PrintHubManager({ records }: PrintHubManagerProps) {
                 </p>
               </div>
               <div className="mt-3 flex items-center justify-between text-[11px]">
-                <span className="text-[#F58220] font-semibold">สรุปทุกแผนก</span>
+                <span className="text-brand-ink font-semibold">สรุปทุกแผนก</span>
                 <span className="text-gray-400">1 หน้า A4</span>
               </div>
             </div>
@@ -391,7 +388,6 @@ export default function PrintHubManager({ records }: PrintHubManagerProps) {
             >
               <div>
                 <div className="flex items-center gap-2 mb-1">
-                  <span className="text-xl">📅</span>
                   <h3 className="text-sm font-bold text-white">เอกสารแยกตามวันที่</h3>
                 </div>
                 <p className="text-xs text-gray-400">
@@ -399,7 +395,7 @@ export default function PrintHubManager({ records }: PrintHubManagerProps) {
                 </p>
               </div>
               <div className="mt-3 flex items-center justify-between text-[11px]">
-                <span className="text-[#F58220] font-semibold">{uniqueDates.length} วันที่มีการส่ง</span>
+                <span className="text-brand-ink font-semibold">{uniqueDates.length} วันที่มีการส่ง</span>
                 <span className="text-gray-400">แยกตามวันที่</span>
               </div>
             </div>
@@ -415,7 +411,6 @@ export default function PrintHubManager({ records }: PrintHubManagerProps) {
             >
               <div>
                 <div className="flex items-center gap-2 mb-1">
-                  <span className="text-xl">🏷️</span>
                   <h3 className="text-sm font-bold text-white">สลิปส่งมอบรายคัน</h3>
                 </div>
                 <p className="text-xs text-gray-400">
@@ -423,7 +418,7 @@ export default function PrintHubManager({ records }: PrintHubManagerProps) {
                 </p>
               </div>
               <div className="mt-3 flex items-center justify-between text-[11px]">
-                <span className="text-[#F58220] font-semibold">รายคันเฉพาะ</span>
+                <span className="text-brand-ink font-semibold">รายคันเฉพาะ</span>
                 <span className="text-gray-400">2 หน้า / คัน</span>
               </div>
             </div>
@@ -439,7 +434,6 @@ export default function PrintHubManager({ records }: PrintHubManagerProps) {
             >
               <div>
                 <div className="flex items-center gap-2 mb-1">
-                  <span className="text-xl">📝</span>
                   <h3 className="text-sm font-bold text-white">แบบฟอร์มเปล่า</h3>
                 </div>
                 <p className="text-xs text-gray-400">
@@ -447,7 +441,7 @@ export default function PrintHubManager({ records }: PrintHubManagerProps) {
                 </p>
               </div>
               <div className="mt-3 flex items-center justify-between text-[11px]">
-                <span className="text-[#F58220] font-semibold">{blankCopies} ชุด</span>
+                <span className="text-brand-ink font-semibold">{blankCopies} ชุด</span>
                 <span className="text-gray-400">{blankCopies * 2} หน้า A4</span>
               </div>
             </div>
@@ -463,7 +457,7 @@ export default function PrintHubManager({ records }: PrintHubManagerProps) {
                 <span className="text-xs font-bold text-gray-300 uppercase tracking-wider">
                   2. ตั้งค่าแบบฟอร์มเปล่า (Blank Form Settings):
                 </span>
-                <span className="text-xs text-[#F58220] font-medium">
+                <span className="text-xs text-brand-ink font-medium">
                   * แบบฟอร์ม A4 2 หน้า (ต้นฉบับ + สำเนา) เค้าโครงตามแบบที่เคยพิมพ์ พร้อมตารางว่าง 6 แถวสำหรับเขียนมือ
                 </span>
               </div>
@@ -471,7 +465,7 @@ export default function PrintHubManager({ records }: PrintHubManagerProps) {
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
                 {/* Select Department */}
                 <div>
-                  <label className="block text-gray-300 font-semibold mb-1">🏢 แผนก:</label>
+                  <label className="block text-gray-300 font-semibold mb-1">แผนก:</label>
                   <select
                     value={blankDept}
                     onChange={(e) => setBlankDept(e.target.value)}
@@ -488,7 +482,7 @@ export default function PrintHubManager({ records }: PrintHubManagerProps) {
 
                 {/* Delivery Date */}
                 <div>
-                  <label className="block text-gray-300 font-semibold mb-1">📅 วันที่ส่งมอบ:</label>
+                  <label className="block text-gray-300 font-semibold mb-1">วันที่ส่งมอบ:</label>
                   <select
                     value={blankDateMode}
                     onChange={(e) => setBlankDateMode(e.target.value as any)}
@@ -512,7 +506,7 @@ export default function PrintHubManager({ records }: PrintHubManagerProps) {
 
                 {/* Number of Copies / Sets */}
                 <div>
-                  <label className="block text-gray-300 font-semibold mb-1">🖨️ จำนวนชุดที่ต้องการพิมพ์:</label>
+                  <label className="block text-gray-300 font-semibold mb-1">จำนวนชุดที่ต้องการพิมพ์:</label>
                   <select
                     value={blankCopies}
                     onChange={(e) => setBlankCopies(Number(e.target.value))}
@@ -541,7 +535,7 @@ export default function PrintHubManager({ records }: PrintHubManagerProps) {
                     setSelectedProductType('all');
                     setSearchQuery('');
                   }}
-                  className="text-xs text-[#F58220] hover:underline"
+                  className="text-xs text-brand-ink hover:underline"
                 >
                   รีเซ็ตตัวกรองทั้งหมด
                 </button>
@@ -551,7 +545,7 @@ export default function PrintHubManager({ records }: PrintHubManagerProps) {
                 
                 {/* Filter by Date */}
                 <div>
-                  <label className="block text-gray-300 font-semibold mb-1">📅 เลือกวันที่:</label>
+                  <label className="block text-gray-300 font-semibold mb-1">เลือกวันที่:</label>
                   <select
                     value={selectedDate}
                     onChange={(e) => setSelectedDate(e.target.value)}
@@ -575,7 +569,7 @@ export default function PrintHubManager({ records }: PrintHubManagerProps) {
 
                 {/* Filter by Department */}
                 <div>
-                  <label className="block text-gray-300 font-semibold mb-1">🏥 เลือกแผนก:</label>
+                  <label className="block text-gray-300 font-semibold mb-1">เลือกแผนก:</label>
                   <select
                     value={selectedDept}
                     onChange={(e) => setSelectedDept(e.target.value)}
@@ -590,7 +584,7 @@ export default function PrintHubManager({ records }: PrintHubManagerProps) {
 
                 {/* Filter by Category */}
                 <div>
-                  <label className="block text-gray-300 font-semibold mb-1">🏷️ กลุ่มแผนก:</label>
+                  <label className="block text-gray-300 font-semibold mb-1">กลุ่มแผนก:</label>
                   <select
                     value={selectedCategory}
                     onChange={(e) => setSelectedCategory(e.target.value)}
@@ -608,7 +602,7 @@ export default function PrintHubManager({ records }: PrintHubManagerProps) {
 
                 {/* Filter by Product Type */}
                 <div>
-                  <label className="block text-gray-300 font-semibold mb-1">🚗 ประเภทรถเข็น:</label>
+                  <label className="block text-gray-300 font-semibold mb-1">ประเภทรถเข็น:</label>
                   <select
                     value={selectedProductType}
                     onChange={(e) => setSelectedProductType(e.target.value as any)}
@@ -629,7 +623,7 @@ export default function PrintHubManager({ records }: PrintHubManagerProps) {
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="🔍 ค้นหาด้วยชื่อแผนก หรือ รหัสรถ (เช่น ห้องผ่าตัด, SICU, B015, A001)..."
+                  placeholder="ค้นหาด้วยชื่อแผนก หรือ รหัสรถ (เช่น ห้องผ่าตัด, SICU, B015, A001)..."
                   className="flex-1 bg-white/5 border border-white/20 rounded-xl px-4 py-2 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-[#F58220]"
                 />
                 {searchQuery && (
@@ -650,7 +644,7 @@ export default function PrintHubManager({ records }: PrintHubManagerProps) {
           <div className="flex items-center gap-4 flex-wrap">
             <div className="flex items-center gap-1.5 text-gray-300">
               <span className="text-gray-400">{docType === 'blank_delivery' ? 'โหมด:' : 'พบข้อมูล:'}</span>
-              <span className="font-bold text-[#F58220] text-sm">
+              <span className="font-bold text-brand-ink text-sm">
                 {docType === 'blank_delivery' ? `${blankCopies} ชุดฟอร์มเปล่า` : `${filteredRecords.length} คัน`}
               </span>
             </div>
@@ -672,7 +666,7 @@ export default function PrintHubManager({ records }: PrintHubManagerProps) {
           </div>
 
           <div className="flex items-center gap-2 text-gray-400">
-            <span>💡 ทิป: สามารถกดปุ่มสั่งพิมพ์เพื่อบันทึกเป็นไฟล์ PDF ได้โดยตรงจาก Browser</span>
+            <span>ทิป: สามารถกดปุ่มสั่งพิมพ์เพื่อบันทึกเป็นไฟล์ PDF ได้โดยตรงจาก Browser</span>
           </div>
         </div>
 
@@ -683,7 +677,6 @@ export default function PrintHubManager({ records }: PrintHubManagerProps) {
         
         {filteredRecords.length === 0 && docType !== 'blank_delivery' ? (
           <div className="no-print p-12 text-center border border-white/10 rounded-2xl bg-white/5 space-y-3">
-            <span className="text-4xl">🔍</span>
             <h3 className="text-lg font-bold text-white">ไม่พบรายการเอกสารตามเงื่อนไขที่เลือก</h3>
             <p className="text-xs text-gray-400 max-w-md mx-auto">
               ลองปรับเปลี่ยนตัวกรองวันที่ แผนก หรือคำค้นหา เพื่อแสดงเอกสารที่ต้องการ
@@ -731,7 +724,7 @@ export default function PrintHubManager({ records }: PrintHubManagerProps) {
                           <tr>
                             <th>ชื่อสินค้า</th>
                             <th>Serial Number</th>
-                            <th style={{ width: '15%', textAlign: 'center' }}>จำนวน</th>
+                            <th>จำนวน</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -739,7 +732,7 @@ export default function PrintHubManager({ records }: PrintHubManagerProps) {
                             <tr key={prodName}>
                               <td>{prodName}</td>
                               <td>{serials.join(', ')}</td>
-                              <td style={{ textAlign: 'center' }}>{serials.length}</td>
+                              <td>{serials.length}</td>
                             </tr>
                           ))}
                         </tbody>
@@ -885,8 +878,8 @@ export default function PrintHubManager({ records }: PrintHubManagerProps) {
 
                   return (
                     <div key={dateStr} className="mb-12">
-                      <div className="no-print bg-[#F58220]/20 border border-[#F58220]/30 rounded-xl p-3 mb-4 text-[#F58220] font-bold text-sm">
-                        📅 ชุดเอกสารประจำวันที่ {displayDate} (พบ {dayRecords.length} คัน ใน {deptKeys.length} แผนก รวม {deptKeys.length * 2} หน้า: ต้นฉบับ + สำเนา)
+                      <div className="no-print bg-[#F58220]/20 border border-[#F58220]/30 rounded-xl p-3 mb-4 text-brand-ink font-bold text-sm">
+                        ชุดเอกสารประจำวันที่ {displayDate} (พบ {dayRecords.length} คัน ใน {deptKeys.length} แผนก รวม {deptKeys.length * 2} หน้า: ต้นฉบับ + สำเนา)
                       </div>
 
                       {deptKeys.map((deptKey, dIdx) => {
@@ -920,7 +913,7 @@ export default function PrintHubManager({ records }: PrintHubManagerProps) {
                                 <tr>
                                   <th>ชื่อสินค้า</th>
                                   <th>Serial Number</th>
-                                  <th style={{ width: '15%', textAlign: 'center' }}>จำนวน</th>
+                                  <th>จำนวน</th>
                                 </tr>
                               </thead>
                               <tbody>
@@ -928,7 +921,7 @@ export default function PrintHubManager({ records }: PrintHubManagerProps) {
                                   <tr key={pName}>
                                     <td>{pName}</td>
                                     <td>{serials.join(', ')}</td>
-                                    <td style={{ textAlign: 'center' }}>{serials.length}</td>
+                                    <td>{serials.length}</td>
                                   </tr>
                                 ))}
                               </tbody>
