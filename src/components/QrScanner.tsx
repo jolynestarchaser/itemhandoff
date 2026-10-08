@@ -1,19 +1,42 @@
 'use client';
 
 import { useEffect, useRef, useState, useCallback } from 'react';
+import Icon from '@/components/Icon';
 
 interface QrScannerProps {
   active: boolean;
   onScanSuccess: (qrData: string, productName: string, productId: string) => void;
+  onManualEntry?: () => void;
 }
 
-export default function QrScanner({ active, onScanSuccess }: QrScannerProps) {
+const REPEAT_SCAN_COOLDOWN_MS = 3000;
+
+function signalScan() {
+  navigator.vibrate?.(80);
+  try {
+    const ctx = new AudioContext();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.frequency.value = 880;
+    gain.gain.value = 0.08;
+    osc.connect(gain).connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.12);
+    osc.onended = () => ctx.close();
+  } catch {
+    // เบราว์เซอร์ที่ไม่รองรับเสียง ยังสแกนต่อได้
+  }
+}
+
+export default function QrScanner({ active, onScanSuccess, onManualEntry }: QrScannerProps) {
   const [status, setStatus] = useState<'idle' | 'starting' | 'scanning' | 'error'>('idle');
   const [errorMsg, setErrorMsg] = useState('');
+  const [torchSupported, setTorchSupported] = useState(false);
+  const [torchOn, setTorchOn] = useState(false);
+  const [lastScanned, setLastScanned] = useState('');
   const videoRef = useRef<HTMLVideoElement>(null);
-  const readerRef = useRef<any>(null);
-  const controlsRef = useRef<any>(null);
-  const hasScannedRef = useRef(false);
+  const controlsRef = useRef<{ stop: () => void } | null>(null);
+  const lastScanRef = useRef<{ text: string; at: number }>({ text: '', at: 0 });
 
   const stopScanner = useCallback(async () => {
     // หยุด controls (zxing decoding loop)
@@ -33,6 +56,8 @@ export default function QrScanner({ active, onScanSuccess }: QrScannerProps) {
       videoRef.current.srcObject = null;
     }
 
+    setTorchSupported(false);
+    setTorchOn(false);
     setStatus('idle');
   }, []);
 
@@ -43,48 +68,70 @@ export default function QrScanner({ active, onScanSuccess }: QrScannerProps) {
 
     setStatus('starting');
     setErrorMsg('');
-    hasScannedRef.current = false;
+    lastScanRef.current = { text: '', at: 0 };
 
     try {
       // Dynamic import เพื่อหลีกเลี่ยงปัญหา SSR
       const { BrowserMultiFormatReader } = await import('@zxing/browser');
 
       const reader = new BrowserMultiFormatReader();
-      readerRef.current = reader;
 
       // เริ่ม decode จากกล้องหลัง (environment)
       const controls = await reader.decodeFromVideoDevice(
         undefined, // ใช้กล้อง default (จะเลือก environment ถ้ามี)
         videoRef.current,
-        (result, error) => {
-          if (result && !hasScannedRef.current) {
-            hasScannedRef.current = true;
+        (result) => {
+          // zxing จะส่ง result ว่างทุก frame ที่ไม่เจอ QR
+          if (!result) return;
 
-            const decodedText = result.getText();
-            console.log('Scanned:', decodedText);
-
-            const parts = decodedText.split(' ');
-            const productId = parts.length >= 2 ? parts.pop() || '' : '';
-            const productName = parts.join(' ');
-
-            onScanSuccess(decodedText, productName, productId);
+          const decodedText = result.getText();
+          const now = Date.now();
+          // กล้องเปิดค้างไว้ จึงต้องกันการอ่าน QR เดิมซ้ำทุกเฟรม
+          if (decodedText === lastScanRef.current.text && now - lastScanRef.current.at < REPEAT_SCAN_COOLDOWN_MS) {
+            lastScanRef.current.at = now;
+            return;
           }
-          // ไม่ต้อง handle error — zxing จะ throw NotFoundException ทุก frame ที่ไม่เจอ QR
+          lastScanRef.current = { text: decodedText, at: now };
+
+          const parts = decodedText.split(' ');
+          const productId = parts.length >= 2 ? parts.pop() || '' : '';
+          const productName = parts.join(' ');
+
+          signalScan();
+          setLastScanned(decodedText);
+          onScanSuccess(decodedText, productName, productId);
         }
       );
 
       controlsRef.current = controls;
+      const track = (videoRef.current.srcObject as MediaStream | null)?.getVideoTracks()[0];
+      const capabilities = track?.getCapabilities?.() as { torch?: boolean } | undefined;
+      setTorchSupported(!!capabilities?.torch);
       setStatus('scanning');
-    } catch (err: any) {
+    } catch (err) {
       console.error('Failed to start scanner:', err);
+      const message = err instanceof Error ? `${err.name} ${err.message}` : '';
       setStatus('error');
       setErrorMsg(
-        err?.message?.includes('NotAllowedError') || err?.message?.includes('Permission')
+        message.includes('NotAllowedError') || message.includes('Permission')
           ? 'กรุณาอนุญาตการเข้าถึงกล้อง แล้วลองใหม่อีกครั้ง'
           : 'ไม่สามารถเปิดกล้องได้ โปรดตรวจสอบว่าเปิดเว็บผ่าน HTTPS'
       );
     }
   }, [onScanSuccess, stopScanner]);
+
+  const toggleTorch = async () => {
+    const track = (videoRef.current?.srcObject as MediaStream | null)?.getVideoTracks()[0];
+    if (!track) return;
+    const next = !torchOn;
+    try {
+      await track.applyConstraints({ advanced: [{ torch: next } as MediaTrackConstraintSet] });
+      setTorchOn(next);
+    } catch (err) {
+      console.error('Failed to toggle torch:', err);
+      setTorchSupported(false);
+    }
+  };
 
   // ควบคุมกล้องตาม prop active
   useEffect(() => {
@@ -101,11 +148,11 @@ export default function QrScanner({ active, onScanSuccess }: QrScannerProps) {
   }, [active]);
 
   return (
-    <div className="flex flex-col items-center gap-4 p-6 border border-white/10 rounded-2xl bg-white/5 backdrop-blur-md max-w-md mx-auto w-full">
+    <div className="flex flex-col items-center gap-4 p-6 border border-white/10 rounded-2xl bg-white/5 max-w-md mx-auto w-full">
       <h2 className="text-xl font-bold text-white">สแกน QR Code</h2>
 
-      {/* 
-        Video element สำหรับ zxing-js 
+      {/*
+        Video element สำหรับ zxing-js
         zxing จะ attach media stream เข้า video element โดยตรง
       */}
       <div className="w-full max-w-xs overflow-hidden rounded-xl bg-black border border-white/20 aspect-square relative">
@@ -118,14 +165,28 @@ export default function QrScanner({ active, onScanSuccess }: QrScannerProps) {
         {/* Scan overlay */}
         {status === 'scanning' && (
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <div className="w-48 h-48 border-2 border-[#F58220] rounded-lg opacity-70 animate-pulse" />
+            <div className="w-48 h-48 border-2 border-[#F58220] rounded-lg opacity-70" />
           </div>
+        )}
+        {status === 'scanning' && torchSupported && (
+          <button
+            type="button"
+            onClick={toggleTorch}
+            aria-pressed={torchOn}
+            aria-label={torchOn ? 'ปิดไฟฉาย' : 'เปิดไฟฉาย'}
+            className={`absolute bottom-2 right-2 w-11 h-11 rounded-full flex items-center justify-center border transition-colors ${
+              torchOn ? 'bg-[#F58220] border-[#F58220] text-white' : 'bg-black/70 border-white/30 text-white'
+            }`}
+          >
+            <Icon name="torch" size={20} />
+          </button>
         )}
       </div>
 
-      {status === 'starting' && (
-        <p className="text-gray-400 text-sm animate-pulse">กำลังเปิดกล้อง...</p>
-      )}
+      <p className="text-sm text-gray-300 min-h-5 text-center" aria-live="polite">
+        {status === 'starting' && 'กำลังเปิดกล้อง...'}
+        {status === 'scanning' && (lastScanned ? `สแกนล่าสุด: ${lastScanned}` : 'กล้องเปิดค้างไว้ สแกนต่อได้ทีละคัน')}
+      </p>
 
       {status === 'error' && (
         <div className="w-full space-y-3 text-center">
@@ -139,12 +200,14 @@ export default function QrScanner({ active, onScanSuccess }: QrScannerProps) {
         </div>
       )}
 
-      {status === 'scanning' && (
+      {onManualEntry && (
         <button
-          onClick={stopScanner}
-          className="w-full py-3 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-xl transition-all"
+          type="button"
+          onClick={onManualEntry}
+          className="min-h-11 px-3 inline-flex items-center gap-2 text-sm text-brand-ink hover:underline"
         >
-          ปิดกล้อง
+          <Icon name="keyboard" />
+          พิมพ์รหัสรถแทน
         </button>
       )}
     </div>

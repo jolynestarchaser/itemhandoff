@@ -133,8 +133,7 @@ export default function SummaryDocManager({ records }: SummaryDocManagerProps) {
 
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#F58220]/15 border border-[#F58220]/30 text-[#F58220] text-xs font-semibold mb-1">
-                <span>📄</span>
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#F58220]/15 border border-[#F58220]/30 text-brand-ink text-xs font-semibold mb-1">
                 <span>Delivery Documents & Manifests</span>
               </div>
               <h1 className="text-2xl sm:text-3xl font-extrabold text-white">
@@ -192,7 +191,7 @@ export default function SummaryDocManager({ records }: SummaryDocManagerProps) {
                     : 'bg-white/5 hover:bg-white/10 text-gray-300 border border-white/10'
                 }`}
               >
-                <span>📅 {dateLabelTh}</span>
+                <span>{dateLabelTh}</span>
                 <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-black/40 text-gray-300 font-mono">
                   {countForDate}
                 </span>
@@ -203,16 +202,16 @@ export default function SummaryDocManager({ records }: SummaryDocManagerProps) {
           <div className="ml-auto flex items-center gap-2">
             <Link
               href="/summary/day18-only"
-              className="text-xs text-[#F58220] hover:underline flex items-center gap-1"
+              className="text-xs text-brand-ink hover:underline flex items-center gap-1"
             >
-              <span>🖨️ ใบส่งมอบ 18 ส.ค.</span>
+              <span>ใบส่งมอบ 18 ส.ค.</span>
             </Link>
             <span className="text-gray-600">•</span>
             <Link
               href="/summary/day15-only"
-              className="text-xs text-[#F58220] hover:underline flex items-center gap-1"
+              className="text-xs text-brand-ink hover:underline flex items-center gap-1"
             >
-              <span>🖨️ ใบส่งมอบ 15 ก.ค.</span>
+              <span>ใบส่งมอบ 15 ก.ค.</span>
             </Link>
           </div>
         </div>
@@ -275,8 +274,8 @@ export default function SummaryDocManager({ records }: SummaryDocManagerProps) {
                           <span className="text-xs text-gray-400 font-normal">
                             ({item.deptNameEn})
                           </span>
-                          <span className="px-2.5 py-0.5 rounded-lg bg-black/40 text-[#F58220] border border-[#F58220]/30 text-xs font-mono font-semibold">
-                            📅 {item.displayDateTh}
+                          <span className="px-2.5 py-0.5 rounded-lg bg-black/40 text-brand-ink border border-[#F58220]/30 text-xs font-mono font-semibold">
+                            {item.displayDateTh}
                           </span>
                         </div>
 
@@ -336,7 +335,7 @@ export default function SummaryDocManager({ records }: SummaryDocManagerProps) {
                           {serials.map((sn) => (
                             <span
                               key={sn}
-                              className="px-2.5 py-1 rounded-lg bg-[#F58220]/20 text-[#F58220] border border-[#F58220]/30 font-mono font-black text-xs shadow-xs tracking-wide hover:scale-105 transition-transform"
+                              className="px-2.5 py-1 rounded-lg bg-[#F58220]/20 text-brand-ink border border-[#F58220]/30 font-mono font-black text-xs shadow-xs tracking-wide hover:scale-105 transition-transform"
                             >
                               {sn}
                             </span>

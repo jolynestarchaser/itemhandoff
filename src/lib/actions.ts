@@ -2,16 +2,21 @@
 
 import prisma from '@/lib/prisma';
 import { revalidatePath, unstable_noStore } from 'next/cache';
-import { HandoffRecord } from '@prisma/client';
+import { HandoffRecord, DeletedHandoffRecord, Prisma } from '@prisma/client';
 import { departments, getDeptThaiName } from '@/lib/departments';
 
-export async function createHandoffRecord(data: { qrData: string; productName: string; productId: string; department: string; handoffDate?: string }) {
+export type CreateHandoffResult =
+  | { success: true; id: string }
+  | { success: false; error: string; duplicateDepartment?: string };
+
+export async function createHandoffRecord(data: { qrData: string; productName: string; productId: string; department: string; handoffDate?: string }): Promise<CreateHandoffResult> {
+  const productId = data.productId.trim().toUpperCase();
   try {
     const record = await prisma.handoffRecord.create({
       data: {
         qrData: data.qrData,
         productName: data.productName,
-        productId: data.productId,
+        productId,
         department: data.department,
         handoffDate: data.handoffDate ? new Date(data.handoffDate) : undefined,
       },
@@ -22,6 +27,14 @@ export async function createHandoffRecord(data: { qrData: string; productName: s
     revalidatePath('/');
     return { success: true, id: record.id };
   } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+      const existing = await prisma.handoffRecord.findUnique({ where: { productId } });
+      return {
+        success: false,
+        error: `รหัส ${productId} ถูกบันทึกไว้แล้ว${existing ? `ที่แผนก ${getDeptThaiName(existing.department)}` : ''}`,
+        duplicateDepartment: existing?.department,
+      };
+    }
     console.error('Failed to create record:', error);
     return { success: false, error: 'Failed to create record' };
   }
@@ -113,7 +126,7 @@ export async function getRecordsByDepartment(department: string): Promise<Handof
   }
 }
 
-// ลบ record ด้วย ID
+// ลบ record ด้วย ID โดยย้ายไปเก็บใน DeletedHandoffRecord เพื่อให้กู้คืนได้
 export async function deleteRecord(id: string): Promise<{ success: boolean; error?: string }> {
   try {
     const record = await prisma.handoffRecord.findUnique({ where: { id } });
@@ -121,7 +134,20 @@ export async function deleteRecord(id: string): Promise<{ success: boolean; erro
       return { success: false, error: 'ไม่พบข้อมูลที่ต้องการลบ' };
     }
 
-    await prisma.handoffRecord.delete({ where: { id } });
+    await prisma.$transaction([
+      prisma.deletedHandoffRecord.create({
+        data: {
+          id: record.id,
+          qrData: record.qrData,
+          productName: record.productName,
+          productId: record.productId,
+          department: record.department,
+          createdAt: record.createdAt,
+          handoffDate: record.handoffDate,
+        },
+      }),
+      prisma.handoffRecord.delete({ where: { id } }),
+    ]);
     revalidatePath(`/department/${record.department}`);
     revalidatePath('/summary');
     revalidatePath('/pending-vehicles');
@@ -130,6 +156,84 @@ export async function deleteRecord(id: string): Promise<{ success: boolean; erro
   } catch (error) {
     console.error(`Failed to delete record ${id}:`, error);
     return { success: false, error: 'ไม่สามารถลบข้อมูลได้' };
+  }
+}
+
+export async function getDeletedRecordsByDepartment(department: string): Promise<DeletedHandoffRecord[]> {
+  unstable_noStore();
+  try {
+    return await prisma.deletedHandoffRecord.findMany({
+      where: { department },
+      orderBy: { deletedAt: 'desc' },
+    });
+  } catch (error) {
+    console.error(`Failed to fetch deleted records for department ${department}:`, error);
+    return [];
+  }
+}
+
+export async function restoreDeletedRecord(id: string): Promise<{ success: boolean; error?: string }> {
+  try {
+    const deleted = await prisma.deletedHandoffRecord.findUnique({ where: { id } });
+    if (!deleted) {
+      return { success: false, error: 'ไม่พบรายการที่ต้องการกู้คืน' };
+    }
+
+    await prisma.$transaction([
+      prisma.handoffRecord.create({
+        data: {
+          id: deleted.id,
+          qrData: deleted.qrData,
+          productName: deleted.productName,
+          productId: deleted.productId,
+          department: deleted.department,
+          createdAt: deleted.createdAt,
+          handoffDate: deleted.handoffDate,
+        },
+      }),
+      prisma.deletedHandoffRecord.delete({ where: { id } }),
+    ]);
+    revalidatePath(`/department/${deleted.department}`);
+    revalidatePath('/summary');
+    revalidatePath('/pending-vehicles');
+    revalidatePath('/');
+    return { success: true };
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+      return { success: false, error: 'กู้คืนไม่ได้ เพราะรหัสรถนี้ถูกบันทึกใหม่ไปแล้ว' };
+    }
+    console.error(`Failed to restore record ${id}:`, error);
+    return { success: false, error: 'ไม่สามารถกู้คืนข้อมูลได้' };
+  }
+}
+
+// ย้ายรถที่บันทึกไว้แล้วไปยังแผนกใหม่
+export async function moveRecordToDepartment(productId: string, department: string, handoffDate?: string): Promise<{ success: boolean; error?: string }> {
+  try {
+    const record = await prisma.handoffRecord.findFirst({
+      where: { productId },
+      orderBy: { createdAt: 'desc' },
+    });
+    if (!record) {
+      return { success: false, error: 'ไม่พบรหัสรถนี้ในระบบ' };
+    }
+
+    await prisma.handoffRecord.update({
+      where: { id: record.id },
+      data: {
+        department,
+        handoffDate: handoffDate ? new Date(handoffDate) : undefined,
+      },
+    });
+    revalidatePath(`/department/${record.department}`);
+    revalidatePath(`/department/${department}`);
+    revalidatePath('/summary');
+    revalidatePath('/pending-vehicles');
+    revalidatePath('/');
+    return { success: true };
+  } catch (error) {
+    console.error(`Failed to move record ${productId}:`, error);
+    return { success: false, error: 'ไม่สามารถย้ายแผนกได้' };
   }
 }
 
@@ -300,9 +404,75 @@ const DEFAULT_INVENTORY_STOCK: InventoryStockStats = {
   totalUnassembled: 100,
 };
 
-// ดึงภาพรวมสถิติสำหรับหน้าแรกและสรุปสถานะ
-export async function getVehicleHandoffStats(targets: { A?: number; B?: number; C?: number } = {}): Promise<VehicleHandoffStats> {
+export interface FleetSettings {
+  targetA: number;
+  targetB: number;
+  targetC: number;
+  spareA: number;
+  spareB: number;
+  spareC: number;
+  unassembledA: number;
+}
+
+const DEFAULT_FLEET_SETTINGS: FleetSettings = {
+  targetA: 200,
+  targetB: 100,
+  targetC: 100,
+  spareA: DEFAULT_INVENTORY_STOCK.spareA,
+  spareB: DEFAULT_INVENTORY_STOCK.spareB,
+  spareC: DEFAULT_INVENTORY_STOCK.spareC,
+  unassembledA: DEFAULT_INVENTORY_STOCK.unassembledA,
+};
+
+const FLEET_SETTINGS_KEY = 'fleet';
+
+export async function getFleetSettings(): Promise<FleetSettings> {
   unstable_noStore();
+  try {
+    const row = await prisma.appSetting.findUnique({ where: { key: FLEET_SETTINGS_KEY } });
+    return row ? { ...DEFAULT_FLEET_SETTINGS, ...JSON.parse(row.value) } : DEFAULT_FLEET_SETTINGS;
+  } catch (error) {
+    console.error('Failed to load fleet settings:', error);
+    return DEFAULT_FLEET_SETTINGS;
+  }
+}
+
+export async function saveFleetSettings(settings: FleetSettings): Promise<{ success: boolean; error?: string }> {
+  if (Object.values(settings).some(v => !Number.isInteger(v) || v < 0 || v > 1000)) {
+    return { success: false, error: 'ตัวเลขต้องเป็นจำนวนเต็ม 0-1000' };
+  }
+  try {
+    const value = JSON.stringify(settings);
+    await prisma.appSetting.upsert({
+      where: { key: FLEET_SETTINGS_KEY },
+      create: { key: FLEET_SETTINGS_KEY, value },
+      update: { value },
+    });
+    revalidatePath('/pending-vehicles');
+    revalidatePath('/');
+    return { success: true };
+  } catch (error) {
+    console.error('Failed to save fleet settings:', error);
+    return { success: false, error: 'ไม่สามารถบันทึกการตั้งค่าได้' };
+  }
+}
+
+function stockFromSettings(settings: FleetSettings): InventoryStockStats {
+  return {
+    ...DEFAULT_INVENTORY_STOCK,
+    spareA: settings.spareA,
+    spareB: settings.spareB,
+    spareC: settings.spareC,
+    totalSpare: settings.spareA + settings.spareB + settings.spareC,
+    unassembledA: settings.unassembledA,
+    totalUnassembled: settings.unassembledA,
+  };
+}
+
+// ดึงภาพรวมสถิติสำหรับหน้าแรกและสรุปสถานะ
+export async function getVehicleHandoffStats(): Promise<VehicleHandoffStats> {
+  unstable_noStore();
+  const settings = await getFleetSettings();
   try {
     const records = await prisma.handoffRecord.findMany({
       orderBy: { createdAt: 'desc' }
@@ -312,35 +482,25 @@ export async function getVehicleHandoffStats(targets: { A?: number; B?: number; 
     let countB = 0;
     let countC = 0;
     let countOther = 0;
-    let maxA = 0;
-    let maxB = 0;
-    let maxC = 0;
 
     const deptSet = new Set<string>();
 
     records.forEach(r => {
       deptSet.add(r.department);
       const pid = (r.productId || '').toUpperCase();
-      const num = parseInt(pid.replace(/\D/g, '')) || 0;
 
       if (pid.startsWith('A')) {
         countA++;
-        if (num > maxA) maxA = num;
       } else if (pid.startsWith('B')) {
         countB++;
-        if (num > maxB) maxB = num;
       } else if (pid.startsWith('C')) {
         countC++;
-        if (num > maxC) maxC = num;
       } else {
         countOther++;
       }
     });
 
-    // Default targets: 200 for A, 100 for B, 100 for C (Total: 400)
-    const targetA = targets.A ?? Math.max(200, maxA);
-    const targetB = targets.B ?? Math.max(100, maxB);
-    const targetC = targets.C ?? Math.max(100, maxC);
+    const { targetA, targetB, targetC } = settings;
     const totalTarget = targetA + targetB + targetC;
 
     const recentRecords = records.slice(0, 6).map(r => ({
@@ -364,7 +524,7 @@ export async function getVehicleHandoffStats(targets: { A?: number; B?: number; 
       countOther,
       activeDepartmentsCount: deptSet.size,
       totalDepartmentsCount: departments.length,
-      stock: DEFAULT_INVENTORY_STOCK,
+      stock: stockFromSettings(settings),
       recentRecords,
     };
   } catch (error) {
@@ -412,8 +572,9 @@ export interface VehicleTrackerData {
 }
 
 // คำนวณสถานะรถเข็นทุกคัน (ส่งมอบแล้ว / ยังไม่ได้ส่งมอบ)
-export async function getAllVehicleStatuses(customTargets: { A?: number; B?: number; C?: number } = {}): Promise<VehicleTrackerData> {
+export async function getAllVehicleStatuses(): Promise<VehicleTrackerData> {
   unstable_noStore();
+  const settings = await getFleetSettings();
   try {
     const records = await prisma.handoffRecord.findMany({
       orderBy: { createdAt: 'asc' }
@@ -448,9 +609,7 @@ export async function getAllVehicleStatuses(customTargets: { A?: number; B?: num
       }
     });
 
-    const targetA = customTargets.A ?? Math.max(200, maxA);
-    const targetB = customTargets.B ?? Math.max(100, maxB);
-    const targetC = customTargets.C ?? Math.max(100, maxC);
+    const { targetA, targetB, targetC } = settings;
 
     const items: VehicleStatusItem[] = [];
 
@@ -541,7 +700,7 @@ export async function getAllVehicleStatuses(customTargets: { A?: number; B?: num
 
     return {
       items,
-      stock: DEFAULT_INVENTORY_STOCK,
+      stock: stockFromSettings(settings),
       summary: {
         totalFleet,
         deliveredCount,

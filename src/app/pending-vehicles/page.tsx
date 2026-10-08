@@ -2,21 +2,33 @@
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import Link from 'next/link';
-import { getAllVehicleStatuses, createHandoffRecord, VehicleStatusItem, VehicleTrackerData } from '@/lib/actions';
+import { getAllVehicleStatuses, createHandoffRecord, getFleetSettings, saveFleetSettings, FleetSettings, VehicleStatusItem, VehicleTrackerData } from '@/lib/actions';
 import { departments } from '@/lib/departments';
 import InteractiveDatePicker from '@/components/InteractiveDatePicker';
+import Icon from '@/components/Icon';
+import { useUrlState } from '@/lib/useUrlState';
+import { useModalDismiss } from '@/lib/useModalDismiss';
+
+const settingFields: { key: keyof FleetSettings; label: string }[] = [
+  { key: 'targetA', label: 'เป้าหมาย A (Round A)' },
+  { key: 'spareA', label: 'รถสำรอง A' },
+  { key: 'targetB', label: 'เป้าหมาย B (RX B)' },
+  { key: 'spareB', label: 'รถสำรอง B' },
+  { key: 'targetC', label: 'เป้าหมาย C (Flow C)' },
+  { key: 'spareC', label: 'รถสำรอง C' },
+  { key: 'unassembledA', label: 'A ที่ยังไม่ประกอบ' },
+];
 
 export default function PendingVehiclesPage() {
   const [data, setData] = useState<VehicleTrackerData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'delivered'>('pending');
-  const [typeFilter, setTypeFilter] = useState<'all' | 'A' | 'B' | 'C'>('all');
-  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useUrlState<'all' | 'pending' | 'delivered'>('status', 'pending');
+  const [typeFilter, setTypeFilter] = useUrlState<'all' | 'A' | 'B' | 'C'>('type', 'all');
+  const [searchQuery, setSearchQuery] = useUrlState<string>('q', '');
   
   // Custom Targets
-  const [targetA, setTargetA] = useState(200);
-  const [targetB, setTargetB] = useState(100);
-  const [targetC, setTargetC] = useState(100);
+  const [settingsDraft, setSettingsDraft] = useState<FleetSettings>({ targetA: 200, targetB: 100, targetC: 100, spareA: 10, spareB: 5, spareC: 5, unassembledA: 100 });
+  const [isSavingSettings, setIsSavingSettings] = useState(false);
   const [showTargetModal, setShowTargetModal] = useState(false);
 
   // Quick Handoff Modal State
@@ -28,13 +40,29 @@ export default function PendingVehiclesPage() {
   });
   const [isSubmittingHandoff, setIsSubmittingHandoff] = useState(false);
   const [toastMessage, setToastMessage] = useState<{ type: 'success' | 'info'; text: string } | null>(null);
+  const handoffDialogRef = useModalDismiss<HTMLDivElement>(!!selectedVehicle, () => setSelectedVehicle(null));
+  const targetDialogRef = useModalDismiss<HTMLDivElement>(showTargetModal, () => setShowTargetModal(false));
 
   const fetchData = useCallback(async () => {
     setLoading(true);
-    const res = await getAllVehicleStatuses({ A: targetA, B: targetB, C: targetC });
+    const [res, settings] = await Promise.all([getAllVehicleStatuses(), getFleetSettings()]);
     setData(res);
+    setSettingsDraft(settings);
     setLoading(false);
-  }, [targetA, targetB, targetC]);
+  }, []);
+
+  const handleSaveSettings = async () => {
+    setIsSavingSettings(true);
+    const res = await saveFleetSettings(settingsDraft);
+    setIsSavingSettings(false);
+    if (res.success) {
+      setShowTargetModal(false);
+      setToastMessage({ type: 'success', text: 'บันทึกการตั้งค่าแล้ว' });
+      fetchData();
+    } else {
+      setToastMessage({ type: 'info', text: res.error || 'ไม่สามารถบันทึกการตั้งค่าได้' });
+    }
+  };
 
   useEffect(() => {
     fetchData();
@@ -139,10 +167,10 @@ export default function PendingVehiclesPage() {
     <div className="max-w-5xl mx-auto px-4 py-4 text-white pb-16">
       {/* Toast Notification */}
       {toastMessage && (
-        <div className={`fixed bottom-6 right-6 z-50 px-5 py-3 rounded-2xl shadow-2xl backdrop-blur-md flex items-center gap-3 transition-all animate-bounce ${
-          toastMessage.type === 'success' ? 'bg-emerald-500/90 text-white border border-emerald-400' : 'bg-[#F58220]/90 text-white border border-orange-400'
+        <div role="status" className={`toast fixed bottom-20 sm:bottom-6 right-4 sm:right-6 z-50 px-5 py-3 rounded-2xl shadow-lg flex items-center gap-3 border ${
+          toastMessage.type === 'success' ? 'bg-emerald-600 text-white border-emerald-400' : 'bg-[#F58220] text-white border-orange-400'
         }`}>
-          <span>{toastMessage.type === 'success' ? '✅' : 'ℹ️'}</span>
+          <Icon name={toastMessage.type === 'success' ? 'check' : 'info'} />
           <span className="font-medium text-sm">{toastMessage.text}</span>
         </div>
       )}
@@ -157,7 +185,7 @@ export default function PendingVehiclesPage() {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <div className="flex items-center gap-3">
-              <span className="p-2.5 rounded-xl bg-gradient-to-br from-[#F58220]/30 to-[#F58220]/10 border border-[#F58220]/30 text-[#F58220]">
+              <span className="p-2.5 rounded-xl bg-gradient-to-br from-[#F58220]/30 to-[#F58220]/10 border border-[#F58220]/30 text-brand-ink">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <rect x="1" y="3" width="15" height="13"></rect>
                   <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon>
@@ -185,13 +213,13 @@ export default function PendingVehiclesPage() {
               title="ตั้งค่าเป้าหมายจำนวนรถ (Target Fleet)"
             >
               <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
-              ตั้งค่าเป้าหมาย ({targetA + targetB + targetC} คัน)
+              ตั้งค่าเป้าหมาย ({settingsDraft.targetA + settingsDraft.targetB + settingsDraft.targetC} คัน)
             </button>
             <button
               type="button"
               onClick={() => handleCopyPending(typeFilter === 'all' ? 'all' : typeFilter)}
               aria-label="คัดลอกเลขค้างส่ง"
-              className="px-3.5 py-2 bg-[#F58220]/20 hover:bg-[#F58220]/30 border border-[#F58220]/40 text-[#F58220] rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5"
+              className="px-3.5 py-2 bg-[#F58220]/20 hover:bg-[#F58220]/30 border border-[#F58220]/40 text-brand-ink rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5"
             >
               <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
               คัดลอกเลขค้างส่ง
@@ -204,7 +232,7 @@ export default function PendingVehiclesPage() {
       {/* KPI Stats Grid */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-6">
         {/* Total Delivered */}
-        <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-md relative overflow-hidden">
+        <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 relative overflow-hidden">
           <div className="absolute top-0 right-0 p-2 opacity-10 text-emerald-400">
             <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
           </div>
@@ -222,13 +250,13 @@ export default function PendingVehiclesPage() {
         </div>
 
         {/* Total Pending */}
-        <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-md relative overflow-hidden">
-          <div className="absolute top-0 right-0 p-2 opacity-10 text-[#F58220]">
+        <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 relative overflow-hidden">
+          <div className="absolute top-0 right-0 p-2 opacity-10 text-brand-ink">
             <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
           </div>
           <span className="text-xs text-gray-400 font-medium">ยังไม่ส่งมอบ</span>
           <div className="flex items-baseline gap-1.5 mt-0.5">
-            <span className="text-2xl font-black text-[#F58220]">{data?.summary.pendingCount ?? '...'}</span>
+            <span className="text-2xl font-black text-brand-ink">{data?.summary.pendingCount ?? '...'}</span>
             <span className="text-xs text-gray-500">คัน ({data?.summary.totalFleet ? Math.round((data.summary.pendingCount / data.summary.totalFleet) * 100) : 0}%)</span>
           </div>
           <div className="w-full bg-white/10 rounded-full h-1 mt-2 overflow-hidden">
@@ -240,15 +268,17 @@ export default function PendingVehiclesPage() {
         </div>
 
         {/* Type A Stat */}
-        <div
+        <button
+          type="button"
+          aria-pressed={typeFilter === 'A'}
           onClick={() => setTypeFilter(typeFilter === 'A' ? 'all' : 'A')}
-          className={`p-3.5 rounded-2xl border backdrop-blur-md cursor-pointer transition-all ${
+          className={`text-left p-3.5 rounded-2xl border transition-colors ${
             typeFilter === 'A' ? 'bg-[#F58220]/20 border-[#F58220]' : 'bg-white/5 border-white/10 hover:border-white/20'
           }`}
         >
           <div className="flex justify-between items-start">
             <span className="text-xs font-semibold text-blue-300">A (Round A)</span>
-            <span className="text-[10px] px-1 rounded bg-blue-500/20 text-blue-300 font-mono">200</span>
+            <span className="text-[10px] px-1 rounded bg-blue-500/20 text-blue-300 font-mono">{data?.summary.typeA.target ?? 200}</span>
           </div>
           <div className="flex items-baseline gap-1 mt-0.5">
             <span className="text-xl font-black text-white">{data?.summary.typeA.delivered ?? 0}</span>
@@ -261,42 +291,46 @@ export default function PendingVehiclesPage() {
               style={{ width: `${data?.summary.typeA.target ? (data.summary.typeA.delivered / data.summary.typeA.target) * 100 : 0}%` }}
             />
           </div>
-        </div>
+        </button>
 
         {/* Type B Stat */}
-        <div
+        <button
+          type="button"
+          aria-pressed={typeFilter === 'B'}
           onClick={() => setTypeFilter(typeFilter === 'B' ? 'all' : 'B')}
-          className={`p-3.5 rounded-2xl border backdrop-blur-md cursor-pointer transition-all ${
+          className={`text-left p-3.5 rounded-2xl border transition-colors ${
             typeFilter === 'B' ? 'bg-[#F58220]/20 border-[#F58220]' : 'bg-white/5 border-white/10 hover:border-white/20'
           }`}
         >
           <div className="flex justify-between items-start">
-            <span className="text-xs font-semibold text-emerald-300">B (RX B)</span>
-            <span className="text-[10px] px-1 rounded bg-emerald-500/20 text-emerald-300 font-mono">100</span>
+            <span className="text-xs font-semibold text-pink-300">B (RX B)</span>
+            <span className="text-[10px] px-1 rounded bg-pink-500/20 text-pink-300 font-mono">{data?.summary.typeB.target ?? 100}</span>
           </div>
           <div className="flex items-baseline gap-1 mt-0.5">
             <span className="text-xl font-black text-white">{data?.summary.typeB.delivered ?? 0}</span>
             <span className="text-xs text-gray-400">/{data?.summary.typeB.target ?? 100}</span>
-            <span className="text-[11px] text-emerald-400 font-medium ml-auto">ค้าง {data?.summary.typeB.pending ?? 0}</span>
+            <span className="text-[11px] text-pink-400 font-medium ml-auto">ค้าง {data?.summary.typeB.pending ?? 0}</span>
           </div>
           <div className="w-full bg-white/10 rounded-full h-1 mt-2 overflow-hidden">
             <div
-              className="bg-emerald-400 h-1 rounded-full"
+              className="bg-pink-400 h-1 rounded-full"
               style={{ width: `${data?.summary.typeB.target ? (data.summary.typeB.delivered / data.summary.typeB.target) * 100 : 0}%` }}
             />
           </div>
-        </div>
+        </button>
 
         {/* Type C Stat */}
-        <div
+        <button
+          type="button"
+          aria-pressed={typeFilter === 'C'}
           onClick={() => setTypeFilter(typeFilter === 'C' ? 'all' : 'C')}
-          className={`col-span-2 sm:col-span-1 p-3.5 rounded-2xl border backdrop-blur-md cursor-pointer transition-all ${
+          className={`col-span-2 sm:col-span-1 text-left p-3.5 rounded-2xl border transition-colors ${
             typeFilter === 'C' ? 'bg-[#F58220]/20 border-[#F58220]' : 'bg-white/5 border-white/10 hover:border-white/20'
           }`}
         >
           <div className="flex justify-between items-start">
             <span className="text-xs font-semibold text-purple-300">C (Flow C)</span>
-            <span className="text-[10px] px-1 rounded bg-purple-500/20 text-purple-300 font-mono">100</span>
+            <span className="text-[10px] px-1 rounded bg-purple-500/20 text-purple-300 font-mono">{data?.summary.typeC.target ?? 100}</span>
           </div>
           <div className="flex items-baseline gap-1 mt-0.5">
             <span className="text-xl font-black text-white">{data?.summary.typeC.delivered ?? 0}</span>
@@ -309,14 +343,14 @@ export default function PendingVehiclesPage() {
               style={{ width: `${data?.summary.typeC.target ? (data.summary.typeC.delivered / data.summary.typeC.target) * 100 : 0}%` }}
             />
           </div>
-        </div>
+        </button>
       </div>
 
       {/* Spare & Unassembled Inventory Stock Banner */}
-      <div className="mb-6 p-4 rounded-2xl bg-gradient-to-r from-amber-500/15 via-black/40 to-blue-500/15 border border-amber-500/30 backdrop-blur-md">
+      <div className="mb-6 p-4 rounded-2xl bg-gradient-to-r from-amber-500/15 via-black/40 to-blue-500/15 border border-amber-500/30">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-white/10">
           <div className="flex items-center gap-2">
-            <span className="text-xl">📦</span>
+            <span className="text-amber-300"><Icon name="box" size={22} /></span>
             <div>
               <h2 className="text-sm font-bold text-white">คลังรถสำรอง (Spare) และรอประกอบ (Unassembled)</h2>
               <p className="text-[11px] text-gray-400">ข้อมูลรถเข็นสำรองหน้างาน และชิ้นส่วนที่พร้อมประกอบเพิ่มเติม</p>
@@ -346,9 +380,9 @@ export default function PendingVehiclesPage() {
           <div className="p-2.5 rounded-xl bg-white/5 border border-white/10 flex items-center justify-between">
             <div>
               <span className="text-[11px] text-gray-400">รถสำรอง Type B</span>
-              <div className="text-sm font-bold text-emerald-300">APIX RX B</div>
+              <div className="text-sm font-bold text-pink-300">APIX RX B</div>
             </div>
-            <span className="text-base font-black font-mono text-white bg-emerald-500/20 px-2 py-0.5 rounded border border-emerald-500/30">
+            <span className="text-base font-black font-mono text-white bg-pink-500/20 px-2 py-0.5 rounded border border-pink-500/30">
               {data?.stock?.spareB ?? 5} คัน
             </span>
           </div>
@@ -379,8 +413,8 @@ export default function PendingVehiclesPage() {
       {data && (
         <div className="mb-6 p-4 rounded-2xl bg-white/5 border border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs sm:text-sm">
           <div className="flex items-center gap-2.5">
-            <span className="text-lg">
-              {data.summary.typeA.gaps.length === 0 && data.summary.typeB.gaps.length === 0 && data.summary.typeC.gaps.length === 0 ? '✨' : '⚠️'}
+            <span className={data.summary.typeA.gaps.length === 0 && data.summary.typeB.gaps.length === 0 && data.summary.typeC.gaps.length === 0 ? 'text-emerald-400' : 'text-amber-400'}>
+              <Icon name={data.summary.typeA.gaps.length === 0 && data.summary.typeB.gaps.length === 0 && data.summary.typeC.gaps.length === 0 ? 'check' : 'alert'} size={20} />
             </span>
             <div>
               <span className="font-semibold text-white">การตรวจสอบความต่อเนื่องของลำดับรหัส: </span>
@@ -401,7 +435,7 @@ export default function PendingVehiclesPage() {
       )}
 
       {/* Filter Toolbar */}
-      <div className="p-4 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-md mb-6 space-y-4">
+      <div className="p-4 rounded-2xl bg-white/5 border border-white/10 mb-6 space-y-4">
         <div className="flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">
           {/* Status Tabs */}
           <div className="flex bg-black/40 p-1 rounded-xl border border-white/10">
@@ -415,7 +449,7 @@ export default function PendingVehiclesPage() {
                   : 'text-gray-400 hover:text-white'
               }`}
             >
-              <span>⏳</span>
+              <Icon name="clock" size={14} />
               <span>ยังไม่ส่งมอบ ({data?.summary.pendingCount ?? 0})</span>
             </button>
             <button
@@ -428,7 +462,7 @@ export default function PendingVehiclesPage() {
                   : 'text-gray-400 hover:text-white'
               }`}
             >
-              <span>✅</span>
+              <Icon name="check" size={14} />
               <span>ส่งมอบแล้ว ({data?.summary.deliveredCount ?? 0})</span>
             </button>
             <button
@@ -472,7 +506,7 @@ export default function PendingVehiclesPage() {
               onClick={() => setTypeFilter('B')}
               aria-label={`APIX RX B ค้าง ${pendingByType.B.length} คัน`}
               className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all ${
-                typeFilter === 'B' ? 'bg-emerald-600 text-white font-semibold' : 'text-gray-400 hover:text-white'
+                typeFilter === 'B' ? 'bg-pink-600 text-white font-semibold' : 'text-gray-400 hover:text-white'
               }`}
             >
               APIX RX B ({pendingByType.B.length} ค้าง)
@@ -505,8 +539,9 @@ export default function PendingVehiclesPage() {
           />
           {searchQuery && (
             <button
+              type="button"
               onClick={() => setSearchQuery('')}
-              className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-xs text-gray-400 hover:text-white"
+              className="absolute inset-y-0 right-0 px-3.5 flex items-center text-sm text-gray-400 hover:text-white"
             >
               ล้างคำค้น
             </button>
@@ -519,7 +554,7 @@ export default function PendingVehiclesPage() {
         <div className="mb-6 p-4 rounded-2xl bg-gradient-to-r from-[#F58220]/10 via-white/5 to-transparent border border-[#F58220]/20">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
             <div className="flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-[#F58220] animate-ping" />
+              <span className="w-2.5 h-2.5 rounded-full bg-[#F58220]" />
               <h3 className="text-sm font-bold text-white">
                 รหัสที่ยังไม่ได้ส่งมอบ ({filteredItems.filter(i => !i.isDelivered).length} คัน)
               </h3>
@@ -532,7 +567,7 @@ export default function PendingVehiclesPage() {
                   setToastMessage({ type: 'success', text: `คัดลอก ${list.length} รหัสเรียบร้อยแล้ว!` });
                 }
               }}
-              className="text-xs text-[#F58220] hover:underline self-start sm:self-auto flex items-center gap-1"
+              className="text-xs text-brand-ink hover:underline self-start sm:self-auto flex items-center gap-1"
             >
               <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
               คัดลอกรายการด้านล่างนี้
@@ -545,10 +580,10 @@ export default function PendingVehiclesPage() {
                 <button
                   key={item.code}
                   onClick={() => setSelectedVehicle(item)}
-                  className="px-2.5 py-1 rounded-lg bg-[#F58220]/20 hover:bg-[#F58220] text-[#F58220] hover:text-white border border-[#F58220]/40 font-mono text-xs font-bold transition-all hover:scale-105"
-                  title="คลิกเพื่อบันทึกส่งมอบรหัสนี้ทันที"
+                  aria-label={`บันทึกส่งมอบ ${item.code}`}
+                  className="asset-tag min-h-11 hover:bg-[#F58220]/20 transition-colors"
                 >
-                  {item.code} +
+                  {item.code}
                 </button>
               ))
             ) : (
@@ -562,7 +597,7 @@ export default function PendingVehiclesPage() {
       {loading ? (
         <div className="text-center py-16 text-gray-400 animate-pulse">
           <div className="inline-block p-4 rounded-2xl bg-white/5 border border-white/10 mb-3">
-            <svg className="animate-spin h-8 w-8 text-[#F58220]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <svg className="animate-spin h-8 w-8 text-brand-ink" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
             </svg>
@@ -598,13 +633,13 @@ export default function PendingVehiclesPage() {
                 <div>
                   <div className="flex items-center justify-between gap-1 mb-1">
                     <span className={`text-base font-extrabold font-mono ${
-                      item.isDelivered ? 'text-emerald-300' : 'text-[#F58220]'
+                      item.isDelivered ? 'text-emerald-300' : 'text-brand-ink'
                     }`}>
                       {item.code}
                     </span>
                     <span className={`text-[10px] px-1.5 py-0.5 rounded font-bold ${
                       isA ? 'bg-blue-500/20 text-blue-300' :
-                      isB ? 'bg-emerald-500/20 text-emerald-300' :
+                      isB ? 'bg-pink-500/20 text-pink-300' :
                       isC ? 'bg-purple-500/20 text-purple-300' : 'bg-gray-500/20 text-gray-300'
                     }`}>
                       {item.type}
@@ -630,7 +665,7 @@ export default function PendingVehiclesPage() {
                     {item.departmentKey && (
                       <Link
                         href={`/department/${encodeURIComponent(item.departmentKey)}`}
-                        className="mt-2 block w-full py-1 text-center bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 rounded-lg text-[11px] font-medium transition-colors"
+                        className="mt-2 flex items-center justify-center w-full min-h-11 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 rounded-lg text-sm font-medium transition-colors"
                       >
                         ดูแผนกนี้ &rarr;
                       </Link>
@@ -639,13 +674,13 @@ export default function PendingVehiclesPage() {
                 ) : (
                   <div className="pt-2 border-t border-orange-500/20">
                     <div className="flex items-center justify-between text-xs text-orange-400 font-medium mb-2">
-                      <span>⏳ ยังไม่ส่งมอบ</span>
+                      <span className="inline-flex items-center gap-1"><Icon name="clock" size={12} />ยังไม่ส่งมอบ</span>
                     </div>
                     <button
                       onClick={() => setSelectedVehicle(item)}
-                      className="w-full py-1.5 bg-[#F58220] hover:bg-[#d9721a] text-white rounded-lg text-xs font-semibold transition-all shadow-md shadow-[#F58220]/20 flex items-center justify-center gap-1"
+                      className="w-full min-h-11 bg-[#F58220] hover:bg-[#d9721a] text-white rounded-lg text-sm font-semibold transition-colors flex items-center justify-center gap-1"
                     >
-                      <span>+</span>
+                      <Icon name="plus" size={14} />
                       <span>ส่งมอบทันที</span>
                     </button>
                   </div>
@@ -658,20 +693,25 @@ export default function PendingVehiclesPage() {
 
       {/* Quick Handoff Modal */}
       {selectedVehicle && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fadeIn">
-          <div className="bg-[#1a1a1a] border border-white/20 rounded-3xl p-6 max-w-md w-full shadow-2xl text-white">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80"
+          onClick={(e) => { if (e.target === e.currentTarget) setSelectedVehicle(null); }}
+        >
+          <div ref={handoffDialogRef} role="dialog" aria-modal="true" aria-labelledby="quick-handoff-title" className="bg-surface border border-white/20 rounded-3xl p-6 max-w-md w-full shadow-2xl text-white">
             <div className="flex justify-between items-center mb-4">
               <div className="flex items-center gap-2">
-                <span className="p-2 rounded-xl bg-[#F58220]/20 text-[#F58220]">
+                <span className="p-2 rounded-xl bg-[#F58220]/20 text-brand-ink">
                   <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="1" y="3" width="15" height="13"></rect><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon><circle cx="5.5" cy="18.5" r="2.5"></circle><circle cx="18.5" cy="18.5" r="2.5"></circle></svg>
                 </span>
-                <h3 className="text-lg font-bold">บันทึกส่งมอบด่วน</h3>
+                <h3 id="quick-handoff-title" className="text-lg font-bold">บันทึกส่งมอบด่วน</h3>
               </div>
               <button
+                type="button"
                 onClick={() => setSelectedVehicle(null)}
-                className="text-gray-400 hover:text-white p-1"
+                aria-label="ปิด"
+                className="w-11 h-11 inline-flex items-center justify-center text-gray-400 hover:text-white"
               >
-                ✕
+                <Icon name="x" size={18} />
               </button>
             </div>
 
@@ -679,7 +719,7 @@ export default function PendingVehiclesPage() {
               <div className="p-3 bg-black/40 border border-white/10 rounded-xl space-y-1">
                 <div className="flex justify-between items-center">
                   <span className="text-xs text-gray-400">รหัสรถ:</span>
-                  <span className="text-base font-bold font-mono text-[#F58220]">{selectedVehicle.code}</span>
+                  <span className="text-base font-bold font-mono text-brand-ink">{selectedVehicle.code}</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-xs text-gray-400">ชื่อสินค้า:</span>
@@ -737,66 +777,52 @@ export default function PendingVehiclesPage() {
 
       {/* Target Fleet Settings Modal */}
       {showTargetModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fadeIn">
-          <div className="bg-[#1a1a1a] border border-white/20 rounded-3xl p-6 max-w-md w-full shadow-2xl text-white">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80"
+          onClick={(e) => { if (e.target === e.currentTarget) setShowTargetModal(false); }}
+        >
+          <div ref={targetDialogRef} role="dialog" aria-modal="true" aria-labelledby="target-title" className="bg-surface border border-white/20 rounded-3xl p-6 max-w-md w-full shadow-2xl text-white">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-bold">ตั้งค่าเป้าหมายจำนวนรถ (Target Fleet)</h3>
-              <button onClick={() => setShowTargetModal(false)} className="text-gray-400 hover:text-white p-1">✕</button>
+              <h3 id="target-title" className="text-lg font-bold">ตั้งค่าเป้าหมายและรถสำรอง</h3>
+              <button type="button" onClick={() => setShowTargetModal(false)} aria-label="ปิด" className="w-11 h-11 inline-flex items-center justify-center text-gray-400 hover:text-white"><Icon name="x" size={18} /></button>
             </div>
             <p className="text-xs text-gray-400 mb-4">
-              ปรับจำนวนเป้าหมายของรถแต่ละรหัสเพื่อคำนวณและแสดงเลขที่ยังไม่ได้ส่งมอบตามสัญญาหรือล็อตการผลิต
+              ค่าที่บันทึกจะใช้กับทุกเครื่อง ทั้งหน้านี้และหน้าแรก
             </p>
 
-            <div className="space-y-3 mb-6">
-              <div>
-                <label className="block text-xs font-semibold text-gray-300 mb-1">เป้าหมายรหัส A (APIX Round A)</label>
-                <input
-                  type="number"
-                  min="1"
-                  max="1000"
-                  value={targetA}
-                  onChange={(e) => setTargetA(parseInt(e.target.value) || 0)}
-                  className="w-full bg-black/60 border border-white/20 rounded-xl px-3.5 py-2 text-sm text-white focus:outline-none focus:border-[#F58220]"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-gray-300 mb-1">เป้าหมายรหัส B (APIX RX B)</label>
-                <input
-                  type="number"
-                  min="1"
-                  max="1000"
-                  value={targetB}
-                  onChange={(e) => setTargetB(parseInt(e.target.value) || 0)}
-                  className="w-full bg-black/60 border border-white/20 rounded-xl px-3.5 py-2 text-sm text-white focus:outline-none focus:border-[#F58220]"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-gray-300 mb-1">เป้าหมายรหัส C (APIX Flow C)</label>
-                <input
-                  type="number"
-                  min="1"
-                  max="1000"
-                  value={targetC}
-                  onChange={(e) => setTargetC(parseInt(e.target.value) || 0)}
-                  className="w-full bg-black/60 border border-white/20 rounded-xl px-3.5 py-2 text-sm text-white focus:outline-none focus:border-[#F58220]"
-                />
-              </div>
+            <div className="grid grid-cols-2 gap-3 mb-6">
+              {settingFields.map(field => (
+                <div key={field.key}>
+                  <label htmlFor={`setting-${field.key}`} className="block text-xs font-semibold text-gray-300 mb-1">{field.label}</label>
+                  <input
+                    id={`setting-${field.key}`}
+                    type="number"
+                    inputMode="numeric"
+                    min="0"
+                    max="1000"
+                    value={settingsDraft[field.key]}
+                    onChange={(e) => setSettingsDraft({ ...settingsDraft, [field.key]: parseInt(e.target.value) || 0 })}
+                    className="w-full min-h-11 bg-black/60 border border-white/20 rounded-xl px-3.5 text-sm text-white focus:outline-none focus:border-[#F58220]"
+                  />
+                </div>
+              ))}
             </div>
 
             <div className="flex gap-3">
               <button
                 type="button"
-                onClick={() => { setTargetA(200); setTargetB(100); setTargetC(100); }}
-                className="px-3 py-2 bg-white/5 hover:bg-white/10 text-gray-300 text-xs rounded-xl"
+                onClick={() => setShowTargetModal(false)}
+                className="min-h-11 px-4 bg-white/10 hover:bg-white/20 text-white text-sm rounded-xl"
               >
-                คืนค่าเริ่มต้น (200/100/100)
+                ยกเลิก
               </button>
               <button
                 type="button"
-                onClick={() => { setShowTargetModal(false); fetchData(); }}
-                className="flex-1 py-2.5 bg-[#F58220] hover:bg-[#d9721a] text-white rounded-xl text-sm font-semibold transition-all"
+                onClick={handleSaveSettings}
+                disabled={isSavingSettings}
+                className="flex-1 min-h-11 bg-[#F58220] hover:bg-[#d9721a] disabled:opacity-50 text-white rounded-xl text-sm font-semibold transition-colors"
               >
-                บันทึกการตั้งค่า
+                {isSavingSettings ? 'กำลังบันทึก...' : 'บันทึกการตั้งค่า'}
               </button>
             </div>
           </div>

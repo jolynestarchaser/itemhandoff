@@ -12,8 +12,25 @@ model HandoffRecord {
   id           String   @id @default(cuid())
   qrData       String   // e.g., "Apix Round A001"
   productName  String   // Parsed from QR (e.g., "Apix Round")
-  productId    String   // Parsed from QR (e.g., "A001")
+  productId    String   @unique // Parsed from QR (e.g., "A001")
   department   String
   createdAt    DateTime @default(now())
   handoffDate  DateTime @default(now())
+}
+
+// Records removed from HandoffRecord are kept here so a delete can be undone
+model DeletedHandoffRecord {
+  id           String   @id
+  qrData       String
+  productName  String
+  productId    String
+  department   String
+  createdAt    DateTime
+  handoffDate  DateTime
+  deletedAt    DateTime @default(now())
+}
+
+model AppSetting {
+  key    String @id
+  value  String
 }

@@ -288,7 +288,7 @@ export default function TemplateBuilder() {
             ? 'bg-rose-950/90 border-rose-500/50 text-rose-200' 
             : 'bg-blue-950/90 border-blue-500/50 text-blue-200'
         }`}>
-          <span>{toast.type === 'success' ? '✅' : toast.type === 'error' ? '❌' : 'ℹ️'}</span>
+          <span>{toast.type === 'success' ? '' : toast.type === 'error' ? '' : ''}</span>
           <span className="text-sm font-medium">{toast.message}</span>
         </div>
       )}
@@ -466,14 +466,13 @@ export default function TemplateBuilder() {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-white/10">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <span className="px-2.5 py-0.5 rounded-lg bg-[#F58220]/20 text-[#F58220] border border-[#F58220]/30 text-xs font-semibold flex items-center gap-1">
-                <span>✨</span>
+              <span className="px-2.5 py-0.5 rounded-lg bg-[#F58220]/20 text-brand-ink border border-[#F58220]/30 text-xs font-semibold flex items-center gap-1">
                 <span>Document & PDF Generator</span>
               </span>
               <span className="text-xs text-gray-400">สร้างเอกสารแบบกำหนดเอง</span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
-              สร้าง <span className="text-[#F58220]">Template เอกสาร PDF</span>
+              สร้าง <span className="text-brand-ink">Template เอกสาร PDF</span>
             </h1>
             <p className="text-sm text-gray-400 mt-1">
               ปรับแต่งเอกสารส่งมอบ/ตรวจรับได้อิสระ เลือกลง Database หรือ Export เฉยๆ ได้ทันที
@@ -485,14 +484,12 @@ export default function TemplateBuilder() {
               href="/print"
               className="px-4 py-2 bg-white/5 hover:bg-white/10 text-gray-300 text-xs sm:text-sm font-medium rounded-xl border border-white/10 transition-all flex items-center gap-1.5"
             >
-              <span>🖨️</span>
               <span>ศูนย์รวมการพิมพ์</span>
             </Link>
             <button
               onClick={() => setShowSaveModal(true)}
               className="px-4 py-2 bg-white/10 hover:bg-white/15 text-white text-xs sm:text-sm font-semibold rounded-xl border border-white/20 transition-all flex items-center gap-1.5"
             >
-              <span>💾</span>
               <span>บันทึก Template นี้</span>
             </button>
           </div>
@@ -511,7 +508,7 @@ export default function TemplateBuilder() {
               <label className="text-xs font-bold text-gray-300 uppercase tracking-wider">
                 1. เลือกแม่แบบเอกสาร (Presets):
               </label>
-              <span className="text-[11px] text-[#F58220] font-medium">
+              <span className="text-[11px] text-brand-ink font-medium">
                 {documentPresets.length} แม่แบบมาตรฐาน
               </span>
             </div>
@@ -521,10 +518,9 @@ export default function TemplateBuilder() {
               <button
                 type="button"
                 onClick={() => setPresetDropdownOpen(!presetDropdownOpen)}
-                className="w-full bg-[#18181b] border border-white/20 hover:border-[#F58220] rounded-xl px-4 py-3 text-sm text-white focus:outline-none flex items-center justify-between transition-all cursor-pointer shadow-lg shadow-black/40"
+                className="w-full bg-surface border border-white/20 hover:border-[#F58220] rounded-xl px-4 py-3 text-sm text-white focus:outline-none flex items-center justify-between transition-all cursor-pointer shadow-lg shadow-black/40"
               >
                 <div className="flex items-center gap-2.5 text-left truncate">
-                  <span className="text-[#F58220]">📄</span>
                   <span className="font-bold truncate">
                     {documentPresets.find(p => p.id === selectedPresetId)?.name || savedTemplates.find(t => t.id === selectedPresetId)?.name || 'เลือกแม่แบบเอกสาร'}
                   </span>
@@ -539,7 +535,7 @@ export default function TemplateBuilder() {
                   strokeWidth="2"
                   strokeLinecap="round"
                   strokeLinejoin="round"
-                  className={`text-gray-400 transition-transform duration-200 ${presetDropdownOpen ? 'rotate-180 text-[#F58220]' : ''}`}
+                  className={`text-gray-400 transition-transform duration-200 ${presetDropdownOpen ? 'rotate-180 text-brand-ink' : ''}`}
                 >
                   <polyline points="6 9 12 15 18 9" />
                 </svg>
@@ -547,7 +543,7 @@ export default function TemplateBuilder() {
 
               {/* Floating Dropdown Menu */}
               {presetDropdownOpen && (
-                <div className="absolute left-0 right-0 top-full mt-2 z-50 bg-[#18181b] border border-white/20 rounded-2xl p-2.5 shadow-2xl shadow-black/90 space-y-2 backdrop-blur-xl animate-in fade-in zoom-in-95 duration-150">
+                <div className="absolute left-0 right-0 top-full mt-2 z-50 bg-surface border border-white/20 rounded-2xl p-2.5 shadow-2xl shadow-black/90 space-y-2 backdrop-blur-xl fade-in zoom-in-95 duration-150">
                   <div>
                     <div className="px-2.5 py-1 text-[11px] font-bold text-gray-400 uppercase tracking-wider">
                       แม่แบบทางการแพทย์ (มาตรฐาน รพ.)
@@ -570,7 +566,6 @@ export default function TemplateBuilder() {
                           >
                             <div className="min-w-0 flex-1">
                               <div className="font-bold text-xs flex items-center gap-1.5 text-white">
-                                <span className="text-[#F58220]">📄</span>
                                 <span className="truncate">{preset.name}</span>
                               </div>
                               <div className="text-[11px] text-gray-400 mt-1 font-normal line-clamp-2">
@@ -610,7 +605,7 @@ export default function TemplateBuilder() {
                               }`}
                             >
                               <div className="min-w-0 flex-1">
-                                <div className="font-bold text-xs truncate">⭐ {t.name}</div>
+                                <div className="font-bold text-xs truncate">{t.name}</div>
                                 <div className="text-[10px] text-gray-400">{t.savedAt}</div>
                               </div>
                               <button
@@ -638,9 +633,8 @@ export default function TemplateBuilder() {
               <button
                 type="button"
                 onClick={() => handlePresetSelect(documentPresets[0].id)}
-                className="text-[11px] text-[#F58220] hover:underline flex items-center gap-1 font-semibold cursor-pointer"
+                className="text-[11px] text-brand-ink hover:underline flex items-center gap-1 font-semibold cursor-pointer"
               >
-                <span>🔄</span>
                 <span>คืนค่ามาตรฐาน (A4 2 หน้า)</span>
               </button>
             </div>
@@ -656,7 +650,7 @@ export default function TemplateBuilder() {
                       onClick={() => handleLoadSavedTemplate(item)}
                       className={`group px-2.5 py-1 rounded-lg text-xs border cursor-pointer flex items-center gap-1.5 transition-all ${
                         selectedPresetId === item.id 
-                          ? 'bg-[#F58220]/20 border-[#F58220] text-[#F58220]' 
+                          ? 'bg-[#F58220]/20 border-[#F58220] text-brand-ink' 
                           : 'bg-white/5 border-white/10 text-gray-300 hover:bg-white/10'
                       }`}
                     >
@@ -687,7 +681,7 @@ export default function TemplateBuilder() {
                     : 'text-gray-400 hover:text-white'
                 }`}
               >
-                <span>📝 กรอกฟอร์มข้อมูล</span>
+                <span>กรอกฟอร์มข้อมูล</span>
               </button>
               <button
                 type="button"
@@ -698,7 +692,7 @@ export default function TemplateBuilder() {
                     : 'text-gray-400 hover:text-white'
                 }`}
               >
-                <span>💻 โค้ด HTML / Markdown</span>
+                <span>โค้ด HTML / Markdown</span>
               </button>
             </div>
 
@@ -723,12 +717,12 @@ export default function TemplateBuilder() {
                     <select
                       value={departmentKey}
                       onChange={(e) => setDepartmentKey(e.target.value)}
-                      className="w-full bg-[#18181b] border border-white/20 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-[#F58220]"
+                      className="w-full bg-surface border border-white/20 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-[#F58220]"
                     >
                       {departments.map(d => (
-                        <option key={d.key} value={d.key} className="bg-[#18181b] text-white py-1.5">{d.nameTh}</option>
+                        <option key={d.key} value={d.key} className="bg-surface text-white py-1.5">{d.nameTh}</option>
                       ))}
-                      <option value="custom" className="bg-[#18181b] text-[#F58220] py-1.5">✏️ ระบุชื่อแผนกเอง...</option>
+                      <option value="custom" className="bg-surface text-brand-ink py-1.5">✏️ ระบุชื่อแผนกเอง...</option>
                     </select>
                   </div>
                 </div>
@@ -785,7 +779,7 @@ export default function TemplateBuilder() {
                         onClick={() => setProductCode(p.code as any)}
                         className={`py-2 px-1.5 rounded-xl border text-center transition-all ${
                           productCode === p.code
-                            ? 'bg-[#F58220]/20 border-[#F58220] text-[#F58220] font-bold shadow-md shadow-[#F58220]/20'
+                            ? 'bg-[#F58220]/20 border-[#F58220] text-brand-ink font-bold shadow-md shadow-[#F58220]/20'
                             : 'bg-white/5 border-white/10 text-gray-300 hover:bg-white/10'
                         }`}
                       >
@@ -826,7 +820,7 @@ export default function TemplateBuilder() {
                     <label className="text-gray-300 font-semibold">
                       รายการ Serial Number (คั่นด้วยจุลภาคหรือขึ้นบรรทัดใหม่):
                     </label>
-                    <span className="text-xs text-[#F58220] font-bold">
+                    <span className="text-xs text-brand-ink font-bold">
                       {parsedSerials.length} คัน
                     </span>
                   </div>
@@ -858,7 +852,7 @@ export default function TemplateBuilder() {
                 {/* Signers: Receiver & Sender */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-white/10">
                   <div className="space-y-2">
-                    <label className="block text-[#F58220] font-semibold">ผู้รับมอบ:</label>
+                    <label className="block text-brand-ink font-semibold">ผู้รับมอบ:</label>
                     <input
                       type="text"
                       value={receiverName}
@@ -875,7 +869,7 @@ export default function TemplateBuilder() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="block text-[#F58220] font-semibold">ผู้ส่งมอบ:</label>
+                    <label className="block text-brand-ink font-semibold">ผู้ส่งมอบ:</label>
                     <input
                       type="text"
                       value={senderName}
@@ -963,7 +957,6 @@ export default function TemplateBuilder() {
                   }`}
                 >
                   <div className="flex items-center gap-2 mb-1">
-                    <span className="text-base">📄</span>
                     <span className="font-bold text-xs">Export PDF เฉยๆ</span>
                   </div>
                   <p className="text-[11px] opacity-75">
@@ -984,7 +977,6 @@ export default function TemplateBuilder() {
                   }`}
                 >
                   <div className="flex items-center gap-2 mb-1">
-                    <span className="text-base">💾</span>
                     <span className="font-bold text-xs">บันทึก DB + Export</span>
                   </div>
                   <p className="text-[11px] opacity-75">
@@ -1019,7 +1011,7 @@ export default function TemplateBuilder() {
                     <polyline points="6 9 6 2 18 2 18 9" /><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" /><rect width="12" height="8" x="6" y="14" />
                   </svg>
                   <span>
-                    {saveToDb ? `บันทึก DB (${parsedSerials.length} คัน) & สั่งพิมพ์ PDF` : '🖨️ สั่งพิมพ์ / บันทึกเป็น PDF (ไม่ลง DB)'}
+                    {saveToDb ? `บันทึก DB (${parsedSerials.length} คัน) & สั่งพิมพ์ PDF` : 'สั่งพิมพ์ / บันทึกเป็น PDF (ไม่ลง DB)'}
                   </span>
                 </>
               )}
@@ -1035,7 +1027,7 @@ export default function TemplateBuilder() {
             <div className="flex items-center gap-2">
               <span className="font-semibold text-white">ตัวอย่างเอกสาร A4 (WYSIWYG Live Preview)</span>
               <span className={`px-2 py-0.5 rounded text-[10px] ${saveToDb ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-blue-500/20 text-blue-300 border border-blue-500/30'}`}>
-                {saveToDb ? '💾 โหมด: บันทึกลง Database' : '📄 โหมด: Export อย่างเดียว'}
+                {saveToDb ? 'โหมด: บันทึกลง Database' : 'โหมด: Export อย่างเดียว'}
               </span>
             </div>
 
@@ -1117,7 +1109,7 @@ export default function TemplateBuilder() {
       {showSaveModal && (
         <div className="no-print fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-zinc-900 border border-white/20 rounded-2xl p-6 max-w-md w-full shadow-2xl space-y-4">
-            <h3 className="text-lg font-bold text-white">💾 บันทึกแม่แบบเอกสารส่วนตัว</h3>
+            <h3 className="text-lg font-bold text-white">บันทึกแม่แบบเอกสารส่วนตัว</h3>
             <p className="text-xs text-gray-400">
               ตั้งชื่อแม่แบบเพื่อบันทึกเก็บไว้ใน Browser และนำกลับมาใช้ซ้ำได้ตลอดเวลา
             </p>
